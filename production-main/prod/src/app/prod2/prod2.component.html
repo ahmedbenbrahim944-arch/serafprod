@@ -1,0 +1,1089 @@
+<div class="full-screen-layout text-white relative overflow-hidden">
+  <!-- Background avec particules -->
+  <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
+       style="background-image: url('https://www.tannerag.ch/Marketing/News%20and%20Social%20Media/38748/image-thumb__38748__contentImageLarge/production-process.e47f5cea.jpg')">
+  </div>
+
+  <!-- Système de particules -->
+  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div *ngFor="let particle of particles()" 
+         class="particle absolute rounded-full bg-cyan-400/40"
+         [style.left]="particle.left"
+         [style.animation-delay]="particle.animationDelay"
+         [style.width]="particle.size"
+         [style.height]="particle.size"
+         [style.opacity]="particle.opacity">
+    </div>
+  </div>
+
+  <div class="relative z-10 h-screen flex flex-col">
+    <!-- Header principal -->
+    <header class="header-industrial py-3 px-4 sm:px-6">
+      <div class="flex justify-between items-center">
+        <button 
+          (click)="goBackToLogin()"
+          class="px-3 sm:px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-red-600 hover:bg-red-500 text-white flex items-center text-xs sm:text-sm">
+          <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          <span class="hidden sm:inline">Retour</span>
+        </button>
+
+        <div class="text-center flex-1">
+          <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400">PLANIFICATION DES LIGNES</h1>
+        </div>
+
+        <div class="w-16 sm:w-32"></div>
+      </div>
+    </header>
+
+    <!-- Contenu principal -->
+    <div class="flex-1 flex overflow-hidden">
+      
+      <!-- Affichage des lignes de production -->
+      <div *ngIf="!selectedLigne()" class="flex-1 p-2 sm:p-4 overflow-auto">
+        <div class="max-w-[95%] mx-auto">
+          
+          <!-- Barre de recherche -->
+          <div class="mb-4 sm:mb-6 flex justify-center">
+            <div class="search-container p-2 sm:p-3 rounded-lg w-full max-w-md sm:w-96">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 search-icon mr-2 sm:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input 
+                  type="text" 
+                  [value]="searchLineQuery()"
+                  (input)="onSearchLineChange($event)"
+                  placeholder="Rechercher une ligne..." 
+                  class="search-input flex-1 text-sm sm:text-base">
+                <button 
+                  *ngIf="searchLineQuery()"
+                  (click)="clearLineSearch()"
+                  class="ml-2 text-gray-400 hover:text-white transition-colors">
+                  <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="filteredLines().length === 0" class="text-center text-gray-400 py-8">
+            <svg class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-base sm:text-lg">Aucune ligne trouvée</p>
+          </div>
+
+          <!-- Grille responsive -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div *ngFor="let line of filteredLines()" 
+                 (click)="onLigneSelected(line)"
+                 class="line-card-large rounded-xl cursor-pointer">
+              <div class="image-container-large">
+                <img [src]="line.imageUrl" [alt]="line.ligne">
+                <div class="line-overlay-large">
+                  <div class="line-name-large">{{ line.ligne }}</div>
+                  <div class="text-cyan-200 text-xs sm:text-sm mt-2">{{ line.referenceCount }} références</div>
+                </div>
+                <div [class.status-badge-active]="line.isActive" 
+                     [class.status-badge-inactive]="!line.isActive"
+                     class="status-badge">
+                  {{ line.isActive ? 'Active' : 'Inactive' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Affichage de la planification -->
+      <div *ngIf="selectedLigne() && !selectedReferenceDetails()" class="flex-1 flex relative">
+        
+        <!-- BOUTON TOGGLE SIDEBAR -->
+        <button 
+          *ngIf="selectedLigne()"
+          (click)="toggleSidebar()"
+          class="toggle-sidebar-btn fixed z-30 bg-cyan-600 hover:bg-cyan-500 text-white rounded-r-lg transition-all duration-300 lg:hidden"
+          [class.sidebar-open]="sidebarVisible()">
+          <svg *ngIf="!sidebarVisible()" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <svg *ngIf="sidebarVisible()" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <!-- Sidebar des semaines -->
+        <div 
+          class="weeks-sidebar h-full overflow-y-auto custom-scrollbar transition-transform duration-300 lg:transform-none"
+          [class.sidebar-hidden]="!sidebarVisible()"
+          [class.sidebar-visible]="sidebarVisible()">
+          <div class="p-3 sm:p-4">
+            <button 
+              (click)="backToLines()"
+              class="w-full mb-4 sm:mb-6 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center text-xs sm:text-sm">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+              Retour aux lignes
+            </button>
+
+            <div class="mb-4 sm:mb-6 p-3 sm:p-4 bg-cyan-900/20 rounded-lg border border-cyan-700/30">
+              <h3 class="font-bold text-cyan-400 text-lg sm:text-xl mb-2">{{ selectedLigne()!.ligne }}</h3>
+              <p class="text-gray-300 text-xs sm:text-sm">{{ selectedLigne()!.referenceCount }} références disponibles</p>
+            </div>
+
+            <h4 class="text-cyan-300 font-semibold mb-3 sm:mb-4 text-xs sm:text-sm uppercase tracking-wider">Semaines disponibles</h4>
+            <div class="space-y-2">
+              <div *ngFor="let week of getAvailableWeeks()" 
+                   (click)="onWeekSelected(week.number)"
+                   [class.active]="selectedWeek() === week.number"
+                   class="week-item p-2 sm:p-3 rounded-lg cursor-pointer border border-gray-600/30">
+                <div class="font-bold text-white text-base sm:text-lg">Semaine {{ week.number }}</div>
+                <div class="text-gray-400 text-xs mt-1">{{ week.startDate | date:'dd/MM' }} - {{ week.endDate | date:'dd/MM' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overlay pour fermer sidebar -->
+        <div 
+          *ngIf="sidebarVisible()" 
+          class="sidebar-overlay lg:hidden"
+          (click)="toggleSidebar()">
+        </div>
+
+        <!-- Contenu de la semaine -->
+        <div class="flex-1 p-3 sm:p-4 md:p-6 overflow-auto custom-scrollbar">
+          <div *ngIf="weekPlanification()" class="mb-4 sm:mb-6">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-cyan-400 mb-2">
+                  {{ selectedLigne()!.ligne }} - Semaine {{ selectedWeek() }}
+                </h2>
+                <p class="text-gray-400 text-sm sm:text-base">{{ filteredWeekPlanification()!.startDate | date:'dd/MM/yyyy' }} au {{ filteredWeekPlanification()!.endDate | date:'dd/MM/yyyy' }}</p>
+              </div>
+              
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:space-x-4">
+                <div class="search-container p-2 sm:p-3 rounded-lg w-full sm:w-64">
+                  <div class="flex items-center">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 search-icon mr-2 sm:mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input 
+                      type="text" 
+                      [value]="searchReferenceQuery()"
+                      (input)="onSearchReferenceChange($event)"
+                      placeholder="Rechercher référence..." 
+                      class="search-input flex-1 text-sm sm:text-base">
+                    <button 
+                      *ngIf="searchReferenceQuery()"
+                      (click)="clearReferenceSearch()"
+                      class="ml-2 text-gray-400 hover:text-white transition-colors">
+                      <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                <button 
+                  (click)="toggleEditMode()"
+                  [class.bg-green-600]="!isEditing()"
+                  [class.bg-blue-600]="isEditing()"
+                  class="px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 text-white flex items-center justify-center text-sm sm:text-base">
+                  <svg *ngIf="!isEditing()" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                  <svg *ngIf="isEditing()" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  {{ isEditing() ? 'Enregistrer' : 'Modifier' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tableau de planification -->
+          <div *ngIf="filteredWeekPlanification()" 
+               class="table-responsive-container rounded-xl border-2 border-gray-700 bg-slate-900/60 shadow-2xl"
+               #tableContainer
+               [class.scrollable]="isScrollable()"
+               [class.scrolled]="isScrolled()"
+               [class.scrolled-end]="isScrolledEnd()"
+               [class.scrolled-start]="!isScrolled()">
+            
+            <div class="table-scroll-wrapper" 
+                 #scrollWrapper
+                 (scroll)="onTableScroll($event)"
+                 (touchstart)="onTouchStart($event)"
+                 (touchmove)="onTouchMove($event)"
+                 (touchend)="onTouchEnd()">
+              
+              <div class="planning-table-min-width">
+                <table class="week-planning-table w-full">
+                 <!-- Remplacer la section <thead> du tableau par ceci : -->
+<!-- Version avec possibilité d'éditer le NB OP -->
+<thead>
+  <tr>
+    <th class="sticky left-0 z-20 sticky-cell border-2 border-gray-700" rowspan="2">RÉFÉRENCES</th>
+    <th class="text-center border-2 border-gray-700" rowspan="2">C/R</th>
+    <th class="text-center border-2 border-gray-700" rowspan="2">OF</th>
+    
+    <ng-container *ngFor="let day of weekDays; let i = index">
+      <th class="text-center border-2 border-gray-700 day-header" colspan="1">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
+          <div class="text-center">
+            <div class="font-bold text-cyan-400 capitalize text-sm sm:text-base">{{ day }}</div>
+            <div class="text-xs sm:text-sm text-gray-300 mt-1">{{ getDayDateCorrected(day, i) | date:'dd/MM' }}</div>
+          </div>
+          <button 
+            [routerLink]="[]"
+            (click)="onPersonIconClick(day)"
+            class="p-1.5 sm:p-2 rounded-full bg-cyan-600 hover:bg-cyan-500 transition-colors duration-200 flex items-center justify-center person-icon-btn">
+            <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+          </button>
+        </div>
+      </th>
+    </ng-container>
+  </tr>
+  <tr>
+    <ng-container *ngFor="let day of weekDays">
+      <th class="text-center border-2 border-gray-700 day-header">
+        <div class="flex flex-col items-center justify-center px-2 py-2">
+          <!-- Badge NB OP -->
+          <div class="rounded-lg px-3 py-1 mb-2 nb-op-badge"
+               [ngClass]="{
+                 'bg-cyan-600': getAverageOperatorsNumber(day) > 0,
+                 'bg-gray-600': getAverageOperatorsNumber(day) === 0
+               }">
+            <span class="text-xs font-bold text-white uppercase tracking-wider">NB OP</span>
+          </div>
+          
+          <!-- Mode édition : Input -->
+          <div *ngIf="isEditing()" class="w-full px-2">
+            <input 
+              type="number"
+              [value]="getAverageOperators(day)"
+              (input)="updateAllReferencesOperators(day, $any($event.target).value)"
+              min="0"
+              max="50"
+              class="w-full bg-slate-700/80 border-2 border-cyan-500/60 rounded-lg px-3 py-2 text-white text-center font-bold text-lg focus:outline-none focus:border-cyan-400 focus:bg-slate-600"
+              placeholder="0">
+          </div>
+          
+          <!-- Mode lecture : Affichage avec code couleur -->
+          <div *ngIf="!isEditing()" 
+               class="text-white font-bold text-xl rounded-lg px-4 py-2 min-w-[60px] text-center"
+               [ngClass]="{
+                 'bg-green-600/40 border-2 border-green-500': getAverageOperatorsNumber(day) >= 10,
+                 'bg-yellow-600/40 border-2 border-yellow-500': getAverageOperatorsNumber(day) >= 5 && getAverageOperatorsNumber(day) < 10,
+                 'bg-red-600/40 border-2 border-red-500': getAverageOperatorsNumber(day) > 0 && getAverageOperatorsNumber(day) < 5,
+                 'bg-gray-700/40 border-2 border-gray-600': getAverageOperatorsNumber(day) === 0
+               }">
+            {{ getAverageOperators(day) }}
+          </div>
+        </div>
+      </th>
+    </ng-container>
+  </tr>
+</thead>
+                  <tbody>
+                    <ng-container *ngFor="let ref of filteredWeekPlanification()!.references">
+                      <!-- Ligne C -->
+                      <tr class="border-b border-gray-700/50">
+                        <td class="sticky left-0 z-10 sticky-cell border-2 border-gray-700 font-semibold whitespace-nowrap px-2 sm:px-4 py-3 sm:py-4 text-sm sm:text-base" rowspan="5">
+                          {{ ref.reference }}
+                        </td>
+                        <td class="text-center font-bold text-white border-2 border-gray-700 py-3 sm:py-4 text-sm sm:text-base">C</td>
+                        <td class="text-center font-mono text-white border-2 border-gray-700 py-3 sm:py-4 vertical-text-cell" rowspan="5">
+                          <div class="vertical-text-wrapper">
+                            <ng-container *ngIf="getDayEntry(ref, 'lundi')">
+                              <input *ngIf="isEditing()" 
+                                     [value]="getDayEntry(ref, 'lundi')!.of"
+                                     (input)="updateDayEntry(ref, 'lundi', 'of', $any($event.target).value)"
+                                     class="vertical-text-input">
+                              <span *ngIf="!isEditing()" class="vertical-text-value">{{ getDayEntry(ref, 'lundi')!.of }}</span>
+                            </ng-container>
+                          </div>
+                        </td>
+                        <ng-container *ngFor="let day of weekDays">
+                          <td class="text-center border-2 border-gray-700 py-3 sm:py-4">
+                            <input *ngIf="isEditing() && getDayEntry(ref, day)" 
+                                   type="number"
+                                   [value]="getDayEntry(ref, day)!.c"
+                                   (input)="updateDayEntry(ref, day, 'c', $any($event.target).value)"
+                                   class="w-full bg-gray-700/50 border border-cyan-500/40 rounded px-2 sm:px-3 py-1 sm:py-2 text-white text-base sm:text-lg text-center font-bold">
+                            <span *ngIf="!isEditing() && getDayEntry(ref, day)" class="text-white font-bold text-base sm:text-lg value-display">{{ getDayEntry(ref, day)!.c }}</span>
+                            <span *ngIf="!getDayEntry(ref, day)" class="text-gray-500 text-sm sm:text-base">-</span>
+                          </td>
+                        </ng-container>
+                      </tr>
+                      
+                      <!-- Ligne M -->
+                      <tr class="border-b border-gray-700/50">
+                        <td class="text-center font-bold text-white border-2 border-gray-700 py-3 sm:py-4 text-sm sm:text-base">M</td>
+                        <ng-container *ngFor="let day of weekDays">
+                          <td class="text-center border-2 border-gray-700 py-3 sm:py-4">
+                            <input *ngIf="isEditing() && getDayEntry(ref, day)" 
+                                   type="number"
+                                   [value]="getDayEntry(ref, day)!.m"
+                                   (input)="updateDayEntry(ref, day, 'm', $any($event.target).value)"
+                                   class="w-full bg-gray-700/50 border border-cyan-500/40 rounded px-2 sm:px-3 py-1 sm:py-2 text-white text-base sm:text-lg text-center font-bold">
+                            <span *ngIf="!isEditing() && getDayEntry(ref, day)" class="text-white font-bold text-base sm:text-lg value-display">{{ getDayEntry(ref, day)!.m }}</span>
+                            <span *ngIf="!getDayEntry(ref, day)" class="text-gray-500 text-sm sm:text-base">-</span>
+                          </td>
+                        </ng-container>
+                      </tr>
+                      
+                      <!-- Ligne DP -->
+                      <tr class="border-b border-gray-700/50">
+                        <td class="text-center font-bold text-white border-2 border-gray-700 py-3 sm:py-4 text-sm sm:text-base">DP</td>
+                        <ng-container *ngFor="let day of weekDays">
+                          <td class="text-center border-2 border-gray-700 py-3 sm:py-4">
+                            <input *ngIf="isEditing() && getDayEntry(ref, day)" 
+                                   type="number"
+                                   [value]="getDayEntry(ref, day)!.dp"
+                                   (input)="updateDayEntry(ref, day, 'dp', $any($event.target).value)"
+                                   class="w-full bg-gray-700/50 border border-cyan-500/40 rounded px-2 sm:px-3 py-1 sm:py-2 text-white text-base sm:text-lg text-center font-bold">
+                            <span *ngIf="!isEditing() && getDayEntry(ref, day)" class="text-white font-bold text-base sm:text-lg value-display">{{ getDayEntry(ref, day)!.dp }}</span>
+                            <span *ngIf="!getDayEntry(ref, day)" class="text-gray-500 text-sm sm:text-base">-</span>
+                          </td>
+                        </ng-container>
+                      </tr>
+                      
+                      <!-- Ligne DM -->
+                      <tr class="border-b border-gray-700/50">
+                        <td class="text-center font-bold text-white border-2 border-gray-700 py-3 sm:py-4 text-sm sm:text-base">DM</td>
+                        <ng-container *ngFor="let day of weekDays">
+                          <td class="text-center border-2 border-gray-700 py-3 sm:py-4">
+                            <input *ngIf="isEditing() && getDayEntry(ref, day)" 
+                                   type="number"
+                                   [value]="getDayEntry(ref, day)!.dm"
+                                   (input)="updateDayEntry(ref, day, 'dm', $any($event.target).value)"
+                                   class="w-full bg-gray-700/50 border border-cyan-500/40 rounded px-2 sm:px-3 py-1 sm:py-2 text-white text-base sm:text-lg text-center font-bold">
+                            <span *ngIf="!isEditing() && getDayEntry(ref, day)" class="text-white font-bold text-base sm:text-lg value-display">{{ getDayEntry(ref, day)!.dm }}</span>
+                            <span *ngIf="!getDayEntry(ref, day)" class="text-gray-500 text-sm sm:text-base">-</span>
+                          </td>
+                        </ng-container>
+                      </tr>
+                      
+                     <!-- Dans prod2.component.html, remplacez la ligne Delta existante par : -->
+
+<!-- Ligne Delta - VERSION CLIQUABLE -->
+<!-- Ligne Delta - CLIQUABLE -->
+<tr class="border-b-2 border-gray-700">
+  <td class="text-center font-bold text-cyan-400 border-2 border-gray-700 py-3 sm:py-4 text-sm sm:text-base">Δ</td>
+  <ng-container *ngFor="let day of weekDays">
+    <td class="text-center border-2 border-gray-700 py-3 sm:py-4">
+      <button *ngIf="getDayEntry(ref, day)"
+              (click)="openCausesModal(ref, day)"
+              type="button"
+              [ngClass]="{
+                'delta-excellent': getDayEntry(ref, day)!.delta >= 70,
+                'delta-good': getDayEntry(ref, day)!.delta >= 50 && getDayEntry(ref, day)!.delta < 70,
+                'delta-average': getDayEntry(ref, day)!.delta >= 20 && getDayEntry(ref, day)!.delta < 50,
+                'delta-poor': getDayEntry(ref, day)!.delta < 20
+              }"
+              class="font-bold delta-value text-base sm:text-lg w-full px-2 py-2 rounded-lg hover:scale-105 transition-transform cursor-pointer hover:shadow-lg relative group">
+        {{ getDayEntry(ref, day)!.delta }}
+        
+        <!-- Indicateur de causes enregistrées -->
+        <span *ngIf="getDayEntry(ref, day)!.causes" 
+              class="absolute top-1 right-1 w-2 h-2 bg-green-400 rounded-full"
+              title="Causes enregistrées"></span>
+      </button>
+      <span *ngIf="!getDayEntry(ref, day)" class="text-gray-500 text-sm sm:text-base">-</span>
+    </td>
+  </ng-container>
+</tr>
+                    </ng-container>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Indicateur de défilement -->
+            <div class="scroll-indicator" 
+                 *ngIf="showScrollIndicator()"
+                 (click)="scrollToStart()">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+              </svg>
+              Glisser pour voir les jours
+            </div>
+          </div>
+
+          <div *ngIf="selectedLigne() && !weekPlanification()" class="h-full flex items-center justify-center">
+            <div class="text-center text-gray-400">
+              <svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <p class="text-base sm:text-lg mb-2">Sélectionnez une semaine</p>
+              <p class="text-xs sm:text-sm text-gray-500">pour voir la planification</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulaire de Saisie Rapport Production -->
+  <!-- Formulaire de Saisie Rapport Production Multi-Opérateurs -->
+<!-- Formulaire de Saisie Rapport Production Multi-Opérateurs -->
+<!-- Formulaire de Saisie Rapport Production Multi-Opérateurs -->
+<!-- Formulaire de Saisie Rapport Production Multi-Opérateurs -->
+<div *ngIf="showProductionForm()" class="production-form-overlay fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+  <div class="production-form-container bg-slate-800 rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col">
+    
+    <div class="bg-cyan-600 p-4 flex justify-between items-center flex-shrink-0 sticky top-0 z-50">
+      <h2 class="text-2xl font-bold text-white">SAISIE RAPPORT PRODUCTION - MULTI-OPÉRATEURS</h2>
+      <button (click)="closeProductionForm()" class="text-white hover:text-cyan-200 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+<div class="flex flex-1 min-h-0">
+        <!-- Section de sélection des opérateurs -->
+      <div class="w-1/4 bg-slate-900 p-6 overflow-y-auto border-r border-slate-600">
+        <h3 class="text-cyan-400 font-semibold text-lg mb-4">Sélection des Opérateurs</h3>
+        
+        <div class="mb-4">
+  <label class="block text-cyan-400 font-semibold mb-2">DATE</label>
+  <input 
+    type="text" 
+    [value]="currentDate()"
+    class="w-full bg-slate-700 border border-cyan-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-300"
+    readonly>
+</div>
+
+        <!-- Affichage de la ligne sélectionnée -->
+        <div class="mb-4 p-3 bg-cyan-900/20 rounded-lg border border-cyan-700/30">
+          <h4 class="font-bold text-cyan-400 text-sm mb-1">LIGNE SÉLECTIONNÉE</h4>
+          <p class="text-white text-base">{{ selectedLigne()?.ligne }}</p>
+        </div>
+
+        <!-- Barre de recherche -->
+        <div class="mb-4">
+          <div class="search-container p-3 rounded-lg">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 search-icon mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <input 
+                type="text" 
+                [value]="searchRecordQuery()"
+                (input)="onSearchRecordChange($event)"
+                placeholder="Rechercher matricule..." 
+                class="search-input flex-1">
+            </div>
+          </div>
+        </div>
+
+        <!-- Boutons de sélection globale -->
+        <div class="flex space-x-2 mb-4">
+          <button 
+            (click)="selectAllOperators()"
+            class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-semibold transition-colors">
+            Tout
+          </button>
+          <button 
+            (click)="deselectAllOperators()"
+            class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-semibold transition-colors">
+            Aucun
+          </button>
+        </div>
+
+        <!-- Liste des opérateurs avec cases à cocher -->
+        <div class="space-y-2 max-h-96 overflow-y-auto operator-list">
+          <div *ngFor="let operator of filteredOperatorsForSelection()" 
+               class="p-3 rounded-lg transition-colors cursor-pointer"
+               [class.bg-cyan-600]="selectedMatricules().includes(operator.matricule)"
+               [class.bg-slate-800]="!selectedMatricules().includes(operator.matricule)"
+               (click)="toggleMatriculeSelection(operator.matricule)">
+            <div class="flex items-center">
+              <div class="mr-3">
+                <input 
+                  type="checkbox" 
+                  [checked]="selectedMatricules().includes(operator.matricule)"
+                  (change)="toggleMatriculeSelection(operator.matricule)"
+                  class="w-4 h-4 text-cyan-600 bg-slate-700 border-slate-600 rounded focus:ring-cyan-500 focus:ring-2">
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-white text-sm">{{ operator.matricule }}</div>
+                <div class="text-xs text-gray-300">{{ operator.nom }} {{ operator.prenom }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Résumé de sélection -->
+        <div class="mt-4 p-3 bg-slate-800 rounded-lg">
+          <div class="text-center">
+            <span class="text-cyan-400 font-semibold">Opérateurs sélectionnés:</span>
+            <div class="text-white font-bold text-lg mt-1">{{ selectedMatricules().length }}</div>
+          </div>
+        </div>
+
+        <!-- Bouton pour voir les enregistrements -->
+        <button 
+          (click)="toggleRecordsPanel()"
+          class="w-full mt-4 px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold transition-colors flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Voir Enregistrements
+        </button>
+      </div>
+
+      <!-- Section de saisie principale -->
+      <!-- Section de saisie principale -->
+<div class="flex-1 p-6 overflow-y-auto">
+  <div *ngIf="selectedMatricules().length === 0" class="h-full flex items-center justify-center">
+    <div class="text-center text-gray-500">
+      <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+      </svg>
+      <p class="text-lg">Sélectionnez des opérateurs pour commencer la saisie</p>
+      <p class="text-sm text-gray-400 mt-2">Utilisez les cases à cocher à gauche</p>
+    </div>
+  </div>
+
+  <!-- Tableau de saisie compact -->
+  <div *ngIf="selectedMatricules().length > 0" class="space-y-4">
+    
+    <!-- Table responsive avec header fixe -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-900 sticky top-0 z-10">
+          <tr>
+            <th class="px-3 py-3 text-left text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">Nom & prénom</th>
+            <th class="px-3 py-3 text-center text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">phase 1</th>
+            <th class="px-3 py-3 text-center text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">phase 2</th>
+            <th class="px-3 py-3 text-center text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">phase 3</th>
+            <th class="px-3 py-3 text-center text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">Heure</th>
+          </tr>
+        </thead>
+      <tbody>
+        <tr *ngFor="let matricule of selectedMatricules()" 
+            class="border-b border-slate-700 hover:bg-slate-800/50 transition-colors">
+          
+          <!-- Nom & Prénom -->
+          <td class="px-3 py-3">
+            <div class="font-semibold text-white">{{ getSafeOperatorFormData(matricule).nomPrenom }}</div>
+            <div class="text-xs text-gray-400">{{ matricule }}</div>
+          </td>
+          
+          <!-- Phase 1 avec heures -->
+          <td class="px-2 py-3">
+            <div class="space-y-2">
+              <select 
+  [value]="getOperatorPhaseValue(matricule, 0)"
+  (change)="updateOperatorPhase(matricule, 0, $any($event.target).value)"
+  class="w-full bg-slate-700 border border-cyan-500/40 rounded px-2 py-1.5 text-white text-sm focus:outline-none focus:border-cyan-300">
+  <option value="">sélectionner phase</option>
+  <option *ngFor="let phase of availablePhases()" [value]="phase">
+    {{ phase }}
+  </option>
+</select>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-400 whitespace-nowrap">Heures:</span>
+                <input 
+                  type="number" 
+                  [value]="getOperatorPhaseHeures(matricule, 0)"
+                  (input)="updateOperatorPhaseHeures(matricule, 0, $any($event.target).value)"
+                  min="0"
+                  max="8"
+                  step="0.5"
+                  placeholder="0"
+                  class="w-16 bg-slate-700 border border-cyan-500/40 rounded px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-cyan-300">
+              </div>
+            </div>
+          </td>
+          
+          <!-- Phase 2 avec heures -->
+          <td class="px-2 py-3">
+            <div class="space-y-2">
+              <select 
+                [value]="getOperatorPhaseValue(matricule, 1)"
+                (change)="updateOperatorPhase(matricule, 1, $any($event.target).value)"
+                class="w-full bg-slate-700 border border-cyan-500/40 rounded px-2 py-1.5 text-white text-sm focus:outline-none focus:border-cyan-300">
+                <option value="">sélectionner phase</option>
+                <option *ngFor="let phase of availablePhases()" [value]="phase">
+                  {{ phase }}
+                </option>
+              </select>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-400 whitespace-nowrap">Heures:</span>
+                <input 
+                  type="number" 
+                  [value]="getOperatorPhaseHeures(matricule, 1)"
+                  (input)="updateOperatorPhaseHeures(matricule, 1, $any($event.target).value)"
+                  min="0"
+                  max="8"
+                  step="0.5"
+                  placeholder="0"
+                  class="w-16 bg-slate-700 border border-cyan-500/40 rounded px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-cyan-300">
+              </div>
+            </div>
+          </td>
+          
+          <!-- Phase 3 avec heures -->
+          <td class="px-2 py-3">
+            <div class="space-y-2">
+              <select 
+                [value]="getOperatorPhaseValue(matricule, 2)"
+                (change)="updateOperatorPhase(matricule, 2, $any($event.target).value)"
+                class="w-full bg-slate-700 border border-cyan-500/40 rounded px-2 py-1.5 text-white text-sm focus:outline-none focus:border-cyan-300">
+                <option value="">sélectionner phase</option>
+                <option *ngFor="let phase of availablePhases()" [value]="phase">
+                  {{ phase }}
+                </option>
+              </select>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-400 whitespace-nowrap">Heures:</span>
+                <input 
+                  type="number" 
+                  [value]="getOperatorPhaseHeures(matricule, 2)"
+                  (input)="updateOperatorPhaseHeures(matricule, 2, $any($event.target).value)"
+                  min="0"
+                  max="8"
+                  step="0.5"
+                  placeholder="0"
+                  class="w-16 bg-slate-700 border border-cyan-500/40 rounded px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-cyan-300">
+              </div>
+            </div>
+          </td>
+          
+          <!-- Total Heures (calculé automatiquement) -->
+          <td class="px-2 py-3">
+            <div class="text-center">
+              <div class="text-green-400 font-bold text-lg">
+                {{ getSafeOperatorFormData(matricule).totalHeures }}h
+              </div>
+              <div class="text-xs text-gray-400 mt-1">
+                {{ 8 - getSafeOperatorFormData(matricule).totalHeures }}h restantes
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Boutons d'action -->
+  <div class="flex justify-between pt-4 border-t border-slate-600">
+    <button 
+      (click)="closeProductionForm()"
+      class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg font-semibold transition-colors">
+      Annuler
+    </button>
+    <button 
+      (click)="saveAllProductionRecords()"
+      class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold transition-colors">
+      Sauvegarder ({{ selectedMatricules().length }})
+    </button>
+  </div>
+</div>
+      </div>
+
+      <!-- Panneau des enregistrements (côté droit) -->
+      <div *ngIf="showRecordsPanel()" class="w-1/3 bg-slate-900 p-6 overflow-y-auto border-l border-slate-600">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-cyan-400 font-semibold text-lg">Enregistrements du {{ currentDate() }}</h3>
+          <button 
+            (click)="toggleRecordsPanel()"
+            class="text-gray-400 hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-3">
+          <div *ngFor="let record of filteredProductionRecords()" 
+               (click)="showRecordDetails(record)"
+               class="bg-slate-800 p-3 rounded-lg border border-slate-600 hover:border-cyan-500 transition-colors cursor-pointer">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <span class="text-cyan-400 font-semibold text-sm">{{ record.matricule }}</span>
+                <span class="text-white ml-2 text-sm">- {{ record.nomPrenom }}</span>
+              </div>
+              <span class="text-green-400 font-semibold text-sm">{{ record.totalHeures }}h</span>
+            </div>
+            
+            <div class="text-xs text-gray-300">
+              <div>Ligne: {{ record.ligne1 }}</div>
+              <div class="mt-1">
+                <span class="text-cyan-300">Phases:</span>
+                <span class="ml-2">{{ formatPhases(record.phasesLigne1) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="filteredProductionRecords().length === 0" class="text-center text-gray-500 py-8">
+          <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p class="text-sm">Aucun enregistrement pour cette date</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de détails des enregistrements (inchangé) -->
+<div *ngIf="showRecordsDetails() && selectedRecordForDetails()" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+  <!-- ... (le code de la modal reste inchangé) ... -->
+</div>
+
+<!-- Modal des 5M Causes - VERSION FINALE -->
+<div *ngIf="showCausesModal()" 
+     class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+  <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl shadow-2xl w-full max-w-3xl border-2 border-cyan-600 causes-modal-content causes-modal-wrapper">
+    
+    <!-- Header -->
+    <div class="bg-cyan-600 p-6 flex justify-between items-center rounded-t-xl">
+      <div>
+        <h2 class="text-2xl font-bold text-white">ANALYSE DES CAUSES - 5M</h2>
+        <p class="text-cyan-100 text-sm mt-1" *ngIf="selectedEntryForCauses()">
+          {{ selectedEntryForCauses()!.reference.reference }} - 
+          {{ selectedEntryForCauses()!.day | titlecase }}
+        </p>
+      </div>
+      <button (click)="closeCausesModal()" 
+              type="button"
+              class="text-white hover:text-cyan-200 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Résumé de l'écart -->
+    <div class="p-6 bg-slate-800/50 border-b border-slate-700">
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="bg-slate-900/80 p-4 rounded-lg border border-cyan-500/30">
+          <div class="text-cyan-400 text-sm font-semibold mb-1">Quantité Planifiée (C)</div>
+          <div class="text-white text-2xl font-bold">
+            {{ getSelectedC() }}
+          </div>
+        </div>
+        
+        <div class="bg-slate-900/80 p-4 rounded-lg border border-orange-500/30">
+          <div class="text-orange-400 text-sm font-semibold mb-1">Produit Fini (DP)</div>
+          <div class="text-white text-2xl font-bold">
+            {{ getSelectedDP() }}
+          </div>
+        </div>
+        
+        <div class="bg-slate-900/80 p-4 rounded-lg border border-red-500/30">
+          <div class="text-red-400 text-sm font-semibold mb-1">Écart à Justifier</div>
+          <div class="text-red-400 text-2xl font-bold">
+            {{ getEcartCDP() }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaire des 5M -->
+<!-- Formulaire des 5M -->
+<div class="p-6 space-y-4 max-h-[400px] overflow-y-auto causes-modal-form-section">      
+      <!-- M1: Matière première -->
+      <!-- M1: Matière première avec références - VERSION CORRIGÉE -->
+<!-- Dans prod2.component.html, remplacez la section M1: Matière première par : -->
+
+<!-- M1: Matière première avec recherche/sélection dynamique -->
+<div class="bg-slate-800/80 p-4 rounded-lg border border-cyan-500/40 hover:border-cyan-500 transition-colors">
+  <label class="block text-cyan-400 font-bold text-sm mb-3">M1: Matière première</label>
+  
+  <!-- Zone de saisie des références -->
+  <div class="bg-slate-900/80 p-4 rounded-lg border border-cyan-600/30 mb-4">
+    <div class="relative mb-4">
+      <label class="block text-cyan-300 text-xs mb-1">Rechercher/Sélectionner Référence MP</label>
+      
+      <!-- Champ de recherche avec suggestions -->
+      <div class="relative">
+        <input 
+          type="text"
+          [value]="currentMPReference()"
+          (input)="onSearchMPChange($event)"
+          (focus)="showMPSuggestions.set(true)"
+          (blur)="closeMPSuggestions()"
+          placeholder="Tapez pour rechercher..."
+          class="w-full bg-slate-700 border-2 border-cyan-500/40 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-cyan-400"
+          autocomplete="off">
+        
+        <!-- Suggestions de recherche -->
+        <div *ngIf="showMPSuggestions() && filteredMPRefs().length > 0" 
+             class="absolute z-50 w-full mt-1 bg-slate-800 border border-cyan-500/40 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          <div *ngFor="let ref of filteredMPRefs()" 
+               (mousedown)="selectMPReference(ref)"
+               class="px-4 py-2 text-white hover:bg-cyan-600 cursor-pointer transition-colors border-b border-slate-700 last:border-b-0">
+            {{ ref }}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Indicateur de chargement -->
+      <div *ngIf="loading()" class="text-cyan-400 text-xs mt-2 flex items-center">
+        <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Chargement des références...
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-3 mb-3">
+      <div class="flex-1">
+        <label class="block text-cyan-300 text-xs mb-1">Référence sélectionnée</label>
+        <div class="w-full bg-slate-700 border-2 border-cyan-500/40 rounded-lg px-4 py-2 text-white text-sm">
+          {{ currentMPReference() || 'Aucune sélection' }}
+        </div>
+      </div>
+      
+      <div class="w-32">
+        <label class="block text-cyan-300 text-xs mb-1">Quantité</label>
+        <input 
+          type="number" 
+          [value]="currentMPQuantite()"
+          (input)="updateMPQuantite($any($event.target).value)"
+          min="0"
+          placeholder="0"
+          class="mp-quantite-input w-full bg-slate-700 border-2 border-cyan-500/40 rounded-lg px-4 py-2 text-white text-sm text-center focus:outline-none focus:border-cyan-400">
+      </div>
+      
+      <button 
+        (click)="addMatierePremiereReference()"
+        type="button"
+        class="mt-6 p-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors"
+        [disabled]="!currentMPReference() || currentMPQuantite() <= 0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Liste des références ajoutées -->
+    <div *ngIf="hasMatierePremierReferences()" class="space-y-2 max-h-48 overflow-y-auto mp-references-container">
+      <div class="text-cyan-300 text-xs font-semibold mb-2 flex items-center">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Références ajoutées 
+        <span class="mp-count-badge ml-2">{{ currentCauses().m1References.length }}</span>
+      </div>
+      
+      <div *ngFor="let mpRef of currentCauses().m1References; let i = index" 
+           class="flex items-center justify-between bg-slate-800/60 p-3 rounded-lg border border-cyan-500/20 hover:border-cyan-500/40 transition-colors mp-reference-item">
+        <div class="flex-1">
+          <div class="text-white font-semibold text-sm">{{ mpRef.reference }}</div>
+          <div class="text-cyan-400 text-xs mt-1">Quantité: {{ mpRef.quantite }}</div>
+        </div>
+        <button 
+          (click)="removeMatierePremiereReference(i)"
+          type="button"
+          class="p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Message si aucune référence -->
+    <div *ngIf="!hasMatierePremierReferences()" 
+         class="text-center text-gray-500 text-xs py-3 mp-empty-message">
+      <svg class="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+      </svg>
+      Aucune référence ajoutée. Recherchez et sélectionnez une référence ci-dessus.
+    </div>
+  </div>
+
+  <!-- Total M1 -->
+  <div class="flex items-center justify-between bg-cyan-900/20 p-3 rounded-lg border border-cyan-500/30">
+    <span class="text-cyan-300 font-semibold text-sm">Total M1 (Matière première):</span>
+    <span class="text-white font-bold text-xl mp-total-display">
+      {{ getTotalM1References() }}
+    </span>
+  </div>
+</div>
+
+      <!-- M2: Absence -->
+      <div class="bg-slate-800/80 p-4 rounded-lg border border-red-500/40 hover:border-red-500 transition-colors">
+        <label class="block text-red-400 font-bold text-sm mb-3">M2: absence</label>
+        <div class="flex items-center space-x-3">
+          <button (click)="decrementCause('m2Absence')"
+                  type="button"
+                  class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+            </svg>
+          </button>
+          
+          <input type="number" 
+                 [value]="currentCauses().m2Absence"
+                 (input)="updateCause('m2Absence', $any($event.target).value)"
+                 min="0"
+                 class="flex-1 bg-slate-700 border-2 border-red-500/40 rounded-lg px-4 py-3 text-white text-xl text-center font-bold focus:outline-none focus:border-red-400">
+          
+          <button (click)="incrementCause('m2Absence')"
+                  type="button"
+                  class="p-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- M2: Rendement -->
+      <div class="bg-slate-800/80 p-4 rounded-lg border border-orange-500/40 hover:border-orange-500 transition-colors">
+        <label class="block text-orange-400 font-bold text-sm mb-3">M2: Rendement</label>
+        <div class="flex items-center space-x-3">
+          <button (click)="decrementCause('m2Rendement')"
+                  type="button"
+                  class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+            </svg>
+          </button>
+          
+          <input type="number" 
+                 [value]="currentCauses().m2Rendement"
+                 (input)="updateCause('m2Rendement', $any($event.target).value)"
+                 min="0"
+                 class="flex-1 bg-slate-700 border-2 border-orange-500/40 rounded-lg px-4 py-3 text-white text-xl text-center font-bold focus:outline-none focus:border-orange-400">
+          
+          <button (click)="incrementCause('m2Rendement')"
+                  type="button"
+                  class="p-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- M4: Maintenance -->
+      <div class="bg-slate-800/80 p-4 rounded-lg border border-yellow-500/40 hover:border-yellow-500 transition-colors">
+        <label class="block text-yellow-400 font-bold text-sm mb-3">M4: maintenance</label>
+        <div class="flex items-center space-x-3">
+          <button (click)="decrementCause('m4Maintenance')"
+                  type="button"
+                  class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+            </svg>
+          </button>
+          
+          <input type="number" 
+                 [value]="currentCauses().m4Maintenance"
+                 (input)="updateCause('m4Maintenance', $any($event.target).value)"
+                 min="0"
+                 class="flex-1 bg-slate-700 border-2 border-yellow-500/40 rounded-lg px-4 py-3 text-white text-xl text-center font-bold focus:outline-none focus:border-yellow-400">
+          
+          <button (click)="incrementCause('m4Maintenance')"
+                  type="button"
+                  class="p-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- M5: Qualité -->
+      <div class="bg-slate-800/80 p-4 rounded-lg border border-purple-500/40 hover:border-purple-500 transition-colors">
+        <label class="block text-purple-400 font-bold text-sm mb-3">M5: Qualité</label>
+        <div class="flex items-center space-x-3">
+          <button (click)="decrementCause('m5Qualite')"
+                  type="button"
+                  class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+            </svg>
+          </button>
+          
+          <input type="number" 
+                 [value]="currentCauses().m5Qualite"
+                 (input)="updateCause('m5Qualite', $any($event.target).value)"
+                 min="0"
+                 class="flex-1 bg-slate-700 border-2 border-purple-500/40 rounded-lg px-4 py-3 text-white text-xl text-center font-bold focus:outline-none focus:border-purple-400">
+          
+          <button (click)="incrementCause('m5Qualite')"
+                  type="button"
+                  class="p-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer avec totaux et actions -->
+    
+
+      <!-- Alerte si différence non nulle -->
+      <div *ngIf="getDifferenceRestante() !== 0" 
+           class="mb-4 p-3 bg-yellow-900/30 border border-yellow-600/50 rounded-lg flex items-start">
+        <svg class="w-5 h-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <div>
+          <div class="text-yellow-400 font-semibold text-sm">Attention</div>
+          <div class="text-yellow-200 text-xs mt-1">
+            La somme des causes ({{ getTotalCauses() }}) ne correspond pas à l'écart total ({{ getEcartCDP() }})
+          </div>
+        </div>
+      </div>
+
+      <!-- Boutons d'action -->
+      <div class="flex justify-end space-x-3">
+        <button (click)="closeCausesModal()"
+                type="button"
+                class="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors">
+          Annuler
+        </button>
+        <button (click)="saveCauses()"
+                type="button"
+                class="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold transition-colors flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Sauvegarder
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <!-- Message de succès -->
+  <div *ngIf="showSuccess()" class="success-notification">
+    <div class="success-content">
+      <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+      <span class="text-sm sm:text-base">{{ successMessage() }}</span>
+    </div>
+  </div>
+
+  <!-- Loader global -->
+  <div *ngIf="loading()" class="loader-overlay">
+    <div class="loader-container">
+      <div class="industrial-loader"></div>
+      <p class="text-cyan-400 mt-4 font-semibold text-sm sm:text-base">Chargement...</p>
+    </div>
+  </div>

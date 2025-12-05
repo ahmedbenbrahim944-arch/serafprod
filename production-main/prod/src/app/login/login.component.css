@@ -1,0 +1,639 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Container et flip - DIMENSIONS OPTIMISÉES */
+.card-container { 
+  width: 100%;
+  max-width: 1600px;
+  height: auto;
+  min-height: 700px;
+  perspective: 1500px;
+  padding: 1rem;
+}
+
+.flip { 
+  transform-style: preserve-3d; 
+  transition: transform 1s cubic-bezier(0.4, 0.2, 0.2, 1); 
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 700px;
+}
+
+.flipped { 
+  transform: rotateY(180deg); 
+}
+
+.face { 
+  position: absolute; 
+  width: 100%; 
+  height: 100%; 
+  border-radius: 25px; 
+  backface-visibility: hidden; 
+  overflow: hidden; 
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: row;
+}
+
+.back { 
+  transform: rotateY(180deg); 
+}
+
+/* Input styles - TAILLES OPTIMISÉES */
+.input-industrial { 
+  background: rgba(255, 255, 255, 0.08); 
+  border: 2px solid rgba(255, 255, 255, 0.25); 
+  color: white; 
+  transition: all 0.3s ease;
+  font-size: 1.25rem;
+  cursor: pointer;
+  min-height: 65px;
+  padding: 1rem 1.5rem;
+}
+
+.input-industrial::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.125rem;
+}
+
+.input-industrial:focus { 
+  border-color: #00e6ff; 
+  box-shadow: 0 0 25px #00e6ff80, inset 0 0 15px rgba(0, 230, 255, 0.15); 
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.input-industrial.active {
+  border-color: #00e6ff;
+  box-shadow: 0 0 20px #00e6ff60;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.input-industrial.error {
+  border-color: #ff4757;
+  box-shadow: 0 0 20px #ff475750;
+}
+
+.input-industrial:read-only {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Boutons - TAILLES OPTIMISÉES */
+.btn-industrial {
+  background: linear-gradient(135deg, #00bcd4, #0097a7);
+  padding: 1.125rem 2.5rem;
+  border-radius: 15px;
+  color: white;
+  font-weight: 700;
+  font-size: 1.375rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 70px;
+}
+
+.btn-industrial::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-industrial:hover::before {
+  left: 100%;
+}
+
+.btn-industrial:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(0, 188, 212, 0.5);
+}
+
+.btn-industrial-register {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding: 1.125rem 2.5rem;
+  border-radius: 15px;
+  color: white;
+  font-weight: 700;
+  font-size: 1.375rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 70px;
+}
+
+.btn-industrial-register::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-industrial-register:hover::before {
+  left: 100%;
+}
+
+.btn-industrial-register:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(102, 126, 234, 0.5);
+}
+
+/* Neon title - TAILLE OPTIMISÉE */
+.neon { 
+  color: #00ffff; 
+  text-shadow: 
+    0 0 15px #00ffff,
+    0 0 30px #00ffff,
+    0 0 60px #00ffff,
+    0 0 100px #00ffff;
+  animation: neon-pulse 2s ease-in-out infinite alternate;
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  line-height: 1.2;
+}
+
+@keyframes neon-pulse {
+  from {
+    text-shadow: 
+      0 0 15px #00ffff,
+      0 0 30px #00ffff,
+      0 0 60px #00ffff,
+      0 0 100px #00ffff;
+  }
+  to {
+    text-shadow: 
+      0 0 10px #00ffff,
+      0 0 20px #00ffff,
+      0 0 40px #00ffff,
+      0 0 80px #00ffff;
+  }
+}
+
+/* Système de particules */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, #00ffff, transparent);
+  animation: float 12s linear infinite;
+  filter: blur(1px);
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Animation float pour les icônes */
+@keyframes float-icon {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(3deg);
+  }
+}
+
+.animate-float {
+  animation: float-icon 3s ease-in-out infinite;
+}
+
+/* Loader */
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader {
+  width: 80px;
+  height: 80px;
+  border: 5px solid transparent;
+  border-top: 5px solid #00ffff;
+  border-right: 5px solid #00ffff;
+  border-radius: 50%;
+  animation: spin 1.2s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+    border-top-color: #00ffff;
+    border-right-color: #00ffff;
+  }
+  50% {
+    border-top-color: #0097a7;
+    border-right-color: #0097a7;
+  }
+  100% {
+    transform: rotate(360deg);
+    border-top-color: #00ffff;
+    border-right-color: #00ffff;
+  }
+}
+
+.loader-bg { 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0, 0, 0, 0.9); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 2000;
+  backdrop-filter: blur(15px);
+}
+
+/* Clavier numérique - DESIGN LATÉRAL OPTIMISÉ */
+.numpad-large {
+  animation: fadeIn 0.3s ease-out;
+  width: 100%;
+  max-width: 420px;
+  min-width: 360px;
+}
+
+.numpad-btn-large {
+  min-height: 4.5rem;
+  aspect-ratio: 1;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: bold;
+  border-radius: 15px;
+}
+
+.numpad-btn-large:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.numpad-btn-large:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Indicateur de champ actif - TAILLE OPTIMISÉE */
+.current-field-indicator {
+  background: rgba(0, 230, 255, 0.2);
+  border: 2px solid #00e6ff;
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0, 230, 255, 0.3);
+}
+
+.current-field-text {
+  color: #00e6ff;
+  font-weight: 600;
+  font-size: 1.25rem;
+  text-shadow: 0 0 10px rgba(0, 230, 255, 0.5);
+}
+
+/* Afficheur de valeur - TAILLE OPTIMISÉE */
+.value-display {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 1.125rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: #00ffff;
+  box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+/* RESPONSIVE - TABLETTES (≤1024px) */
+@media (max-width: 1024px) {
+  .card-container {
+    max-width: 95%;
+    min-height: 650px;
+    padding: 1rem;
+  }
+
+  .flip {
+    min-height: 650px;
+  }
+  
+  .face {
+    flex-direction: row;
+    overflow-y: auto;
+  }
+  
+  /* Section gauche réduite */
+  .face > div:first-child {
+    width: 35% !important;
+    padding: 2rem 1.5rem !important;
+  }
+
+  /* Section droite plus large */
+  .face > div:last-child {
+    width: 65% !important;
+    padding: 2rem 1.5rem !important;
+    gap: 1.5rem !important;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .neon {
+    font-size: clamp(2rem, 5vw, 3rem);
+    margin-bottom: 1.5rem !important;
+  }
+
+  .face img {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  /* Formulaire prend plus de place */
+  .face > div:last-child > div:first-child {
+    flex: 1;
+    min-width: 320px;
+  }
+
+  /* Clavier à côté */
+  .face > div:last-child > div:last-child {
+    width: auto !important;
+    flex-shrink: 0;
+  }
+
+  .numpad-large {
+    max-width: 340px;
+    min-width: 300px;
+    padding: 1.5rem;
+  }
+  
+  .numpad-btn-large {
+    min-height: 3.75rem;
+    font-size: 1.5rem;
+  }
+
+  .input-industrial {
+    font-size: 1.125rem;
+    min-height: 60px;
+  }
+
+  .value-display {
+    min-height: 60px;
+    font-size: 1.35rem;
+  }
+
+  h2 {
+    font-size: 2.25rem !important;
+  }
+
+  .btn-industrial,
+  .btn-industrial-register {
+    font-size: 1.25rem;
+    min-height: 65px;
+  }
+}
+
+/* RESPONSIVE - MOBILES (≤768px) - Layout vertical */
+@media (max-width: 768px) {
+  .card-container {
+    padding: 0.5rem;
+    min-height: 550px;
+  }
+
+  .flip {
+    min-height: 550px;
+  }
+  
+  .face {
+    flex-direction: column;
+  }
+  
+  .face > div:first-child {
+    width: 100% !important;
+    min-height: 220px;
+    padding: 1.5rem 1rem !important;
+  }
+
+  .face > div:last-child {
+    width: 100% !important;
+    flex-direction: column !important;
+    padding: 1.5rem 1rem !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Formulaire en haut */
+  .face > div:last-child > div:first-child {
+    width: 100% !important;
+    min-width: auto;
+  }
+
+  /* Clavier en bas */
+  .face > div:last-child > div:last-child {
+    width: 100% !important;
+  }
+
+  .neon {
+    font-size: clamp(1.875rem, 6vw, 2.5rem);
+    margin-bottom: 1rem !important;
+  }
+
+  .face img {
+    width: 110px !important;
+    height: 110px !important;
+  }
+  
+  .numpad-large {
+    max-width: 100%;
+    min-width: auto;
+    padding: 1.25rem;
+  }
+  
+  .numpad-btn-large {
+    min-height: 3.5rem;
+    font-size: 1.4rem;
+  }
+  
+  .input-industrial {
+    font-size: 1.125rem;
+    min-height: 58px;
+  }
+  
+  .value-display {
+    min-height: 58px;
+    font-size: 1.3rem;
+  }
+
+  h2 {
+    font-size: 2rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  p {
+    font-size: 1.125rem !important;
+  }
+
+  .btn-industrial,
+  .btn-industrial-register {
+    font-size: 1.125rem;
+    padding: 1rem 2rem;
+    min-height: 60px;
+  }
+
+  /* Grid 2 colonnes pour prénom/nom */
+  .grid-cols-2 {
+    gap: 1rem !important;
+  }
+}
+
+/* RESPONSIVE - PETITS MOBILES (≤480px) */
+@media (max-width: 480px) {
+  .card-container {
+    padding: 0.25rem;
+    min-height: 400px;
+  }
+
+  .flip {
+    min-height: 400px;
+  }
+
+  .face {
+    border-radius: 15px;
+  }
+
+  .face > div:first-child {
+    min-height: 180px;
+    padding: 1rem 0.75rem !important;
+  }
+
+  .face > div:last-child {
+    padding: 1rem 0.75rem !important;
+    gap: 1.5rem !important;
+  }
+
+  .neon {
+    font-size: clamp(1.5rem, 8vw, 2rem);
+  }
+
+  .face img {
+    width: 80px !important;
+    height: 80px !important;
+  }
+  
+  .numpad-large {
+    padding: 1rem;
+  }
+  
+  .numpad-btn-large {
+    min-height: 3rem;
+    font-size: 1.15rem;
+    border-radius: 10px;
+  }
+  
+  .btn-industrial,
+  .btn-industrial-register {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.95rem;
+    min-height: 48px;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  .input-industrial {
+    font-size: 0.9rem;
+    min-height: 46px;
+  }
+
+  /* Passer en 1 colonne pour prénom/nom */
+  .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00bcd4, #0097a7);
+  border-radius: 3px;
+}
+
+/* Amélioration de l'accessibilité */
+.numpad-btn-large:focus {
+  outline: 2px solid #00e6ff;
+  outline-offset: 2px;
+}
+
+.input-industrial:focus {
+  outline: none;
+}
+
+/* Effet de brillance sur les boutons */
+.numpad-btn-large {
+  position: relative;
+  overflow: hidden;
+}
+
+.numpad-btn-large::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: rotate(45deg);
+  transition: all 0.3s ease;
+}
+
+.numpad-btn-large:hover::after {
+  transform: rotate(45deg) translate(50%, 50%);
+}
