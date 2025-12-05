@@ -10,11 +10,21 @@ import {
   UsePipes, 
   ValidationPipe,
   ParseIntPipe,
-  Query
+  Query,
+  
 } from '@nestjs/common';
 import { SaisieRapportService } from './saisie-rapport.service';
 import { CreateSaisieRapportDto } from './dto/create-saisie-rapport.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { IsString, IsNotEmpty } from 'class-validator';
+
+
+
+export class VoirRapportsSemaineDto {
+  @IsString()
+  @IsNotEmpty({ message: 'La semaine est obligatoire' })
+  semaine: string;
+}
 
 @Controller('saisie-rapport')
 export class SaisieRapportController {
@@ -81,5 +91,11 @@ export class SaisieRapportController {
   @UseGuards(JwtAuthGuard)
   async remove(@Param('id', ParseIntPipe) id: number) {
     return await this.saisieRapportService.remove(id);
+  }
+  @Post('vu')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async voirRapportsSemaine(@Body() voirRapportsSemaineDto: VoirRapportsSemaineDto) {
+    return await this.saisieRapportService.voirRapportsSemaine(voirRapportsSemaineDto.semaine);
   }
 }

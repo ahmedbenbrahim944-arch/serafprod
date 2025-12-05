@@ -14,6 +14,7 @@ import { Ouvrier } from '../ouvrier/entities/ouvrier.entity';
 import { Phase } from '../phase/entities/phase.entity';
 import { Planification } from '../semaine/entities/planification.entity';
 
+
 @Injectable()
 export class SaisieRapportService {
   constructor(
@@ -219,6 +220,149 @@ export class SaisieRapportService {
     } catch (error) {
       console.error('Erreur récupération rapports par semaine:', error);
       throw new InternalServerErrorException('Erreur lors de la récupération des rapports');
+    }
+  }
+
+   async voirRapportsSemaine(semaine: string) {
+    try {
+      console.log(`=== RÉCUPÉRATION DES RAPPORTS POUR LA SEMAINE: ${semaine} ===`);
+      
+      // Récupérer tous les rapports de la semaine
+      const rapports = await this.saisieRapportRepository.find({
+        where: { semaine },
+        order: { 
+          jour: 'ASC',
+          ligne: 'ASC',
+          matricule: 'ASC'
+        }
+      });
+
+      if (rapports.length === 0) {
+        return {
+          message: `Aucun rapport trouvé pour la semaine "${semaine}"`,
+          semaine,
+          totalRapports: 0,
+          rapports: [],
+          statistiques: {
+            totalHeures: 0,
+            totalOuvriers: 0,
+            totalLignes: 0,
+            moyenneHeuresParOuvrier: 0,
+            repartitionParJour: {},
+            repartitionParLigne: {}
+          }
+        };
+      }
+
+      // Calculer les statistiques
+      const matricules = new Set<number>();
+      const lignes = new Set<string>();
+      const jours = new Set<string>();
+      let totalHeuresSemaine = 0;
+      
+      const repartitionParJour: Record<string, { rapports: number, heures: number, ouvriers: Set<number> }> = {};
+      const repartitionParLigne: Record<string, { rapports: number, heures: number, ouvriers: Set<number> }> = {};
+
+      // Traiter chaque rapport
+      rapports.forEach(rapport => {
+        // Compter les ouvriers uniques
+        matricules.add(rapport.matricule);
+        
+        // Compter les lignes uniques
+        lignes.add(rapport.ligne);
+        
+        // Compter les jours uniques
+        jours.add(rapport.jour);
+        
+        // Ajouter les heures totales
+        totalHeuresSemaine += rapport.totalHeuresJour;
+        
+        // Répartition par jour
+        if (!repartitionParJour[rapport.jour]) {
+          repartitionParJour[rapport.jour] = {
+            rapports: 0,
+            heures: 0,
+            ouvriers: new Set<number>()
+          };
+        }
+        repartitionParJour[rapport.jour].rapports++;
+        repartitionParJour[rapport.jour].heures += rapport.totalHeuresJour;
+        repartitionParJour[rapport.jour].ouvriers.add(rapport.matricule);
+        
+        // Répartition par ligne
+        if (!repartitionParLigne[rapport.ligne]) {
+          repartitionParLigne[rapport.ligne] = {
+            rapports: 0,
+            heures: 0,
+            ouvriers: new Set<number>()
+          };
+        }
+        repartitionParLigne[rapport.ligne].rapports++;
+        repartitionParLigne[rapport.ligne].heures += rapport.totalHeuresJour;
+        repartitionParLigne[rapport.ligne].ouvriers.add(rapport.matricule);
+      });
+
+      // Calculer la moyenne d'heures par ouvrier
+      const moyenneHeuresParOuvrier = matricules.size > 0 
+        ? totalHeuresSemaine / matricules.size 
+        : 0;
+
+      // Formater les rapports pour la réponse
+      const rapportsFormates = rapports.map(rapport => ({
+        id: rapport.id,
+        semaine: rapport.semaine,
+        jour: rapport.jour,
+        ligne: rapport.ligne,
+        matricule: rapport.matricule,
+        nomPrenom: rapport.nomPrenom,
+        phases: rapport.phases,
+        totalHeuresJour: rapport.totalHeuresJour,
+        heuresRestantes: rapport.heuresRestantes,
+        nbPhasesJour: rapport.nbPhasesJour,
+        pcsProdLigne: `${rapport.pcsProdLigne}%`,
+        createdAt: rapport.createdAt,
+        updatedAt: rapport.updatedAt
+      }));
+
+      // Formater les statistiques
+      const statistiques = {
+        totalRapports: rapports.length,
+        totalHeures: totalHeuresSemaine,
+        totalOuvriers: matricules.size,
+        totalLignes: lignes.size,
+        totalJours: jours.size,
+        moyenneHeuresParOuvrier: Math.round(moyenneHeuresParOuvrier * 100) / 100,
+        repartitionParJour: Object.entries(repartitionParJour).reduce((acc, [jour, data]) => {
+          acc[jour] = {
+            rapports: data.rapports,
+            heures: data.heures,
+            ouvriers: data.ouvriers.size
+          };
+          return acc;
+        }, {} as Record<string, any>),
+        repartitionParLigne: Object.entries(repartitionParLigne).reduce((acc, [ligne, data]) => {
+          acc[ligne] = {
+            rapports: data.rapports,
+            heures: data.heures,
+            ouvriers: data.ouvriers.size
+          };
+          return acc;
+        }, {} as Record<string, any>)
+      };
+
+      console.log(`=== RAPPORTS RÉCUPÉRÉS: ${rapports.length} pour la semaine ${semaine} ===`);
+
+      return {
+        message: `Rapports de la semaine "${semaine}" récupérés avec succès`,
+        semaine,
+        totalRapports: rapports.length,
+        rapports: rapportsFormates,
+        statistiques
+      };
+
+    } catch (error) {
+      console.error('Erreur lors de la récupération des rapports par semaine:', error);
+      throw new InternalServerErrorException('Erreur lors de la récupération des rapports de la semaine');
     }
   }
 

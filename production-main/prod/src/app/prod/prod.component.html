@@ -116,6 +116,15 @@
                    'text-gray-300 hover:text-white hover:bg-gray-700/50'">
           🔄 Ajouter Phase
         </button>
+        <!-- Dans la section Navigation par onglets -->
+        <button 
+          (click)="setActiveTab('download-phase')"
+          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
+          [class]="activeTab() === 'download-phase' ? 
+                  'bg-red-600 text-white shadow-lg shadow-red-600/25' : 
+                  'text-gray-300 hover:text-white hover:bg-gray-700/50'">
+          📥 Télécharger Phase
+        </button>
       </div>
     </div>
 
@@ -204,6 +213,163 @@
         </div>
       </div>
     </div>
+
+    <!-- Onglet: Télécharger les Rapports de Phase -->
+<!-- Dans le template de téléchargement de phase -->
+<div *ngIf="activeTab() === 'download-phase'" class="fade-in">
+  <div class="max-w-2xl mx-auto">
+    <div class="creation-card">
+      <h2 class="text-2xl font-bold text-red-400 mb-6">Télécharger les Rapports de Phase</h2>
+      <p class="text-gray-400 mb-6">Téléchargez tous les rapports de phase d'une semaine spécifique au format Excel</p>
+      
+      <!-- Message d'erreur principal -->
+      <div *ngIf="errorMessage()" class="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-xl animate-shake">
+        <div class="flex items-start">
+          <svg class="w-6 h-6 text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div>
+            <p class="text-red-300 font-medium">{{ errorMessage() }}</p>
+            <p class="text-red-400/80 text-sm mt-1">
+              Vérifiez le nom de la semaine et réessayez.
+              <span *ngIf="downloadPhaseForm.semaine.includes('semaine')" class="ml-1">
+                Semaines disponibles: semaine1 à semaine52
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <form (ngSubmit)="onDownloadPhaseReports()" class="space-y-6">
+        <!-- Sélection de la semaine -->
+        <div>
+          <label class="form-label">Sélectionner la Semaine *</label>
+          
+          <div class="relative">
+            <input 
+              type="text" 
+              [(ngModel)]="downloadPhaseForm.semaine" 
+              name="semaine"
+              (ngModelChange)="onSemaineChange($event)"
+              placeholder="Ex: semaine4, semaine47, semaine48"
+              class="form-input pl-12"
+              [class.error]="downloadPhaseForm.errors.semaine"
+              [class.border-red-500]="errorMessage()?.includes('n\'existe pas')">            
+            <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+          </div>
+          
+          <div *ngIf="downloadPhaseForm.errors.semaine" class="form-error">
+            {{ downloadPhaseForm.errors.semaine }}
+          </div>
+          
+          <div class="mt-2 text-sm text-gray-400 flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Format: "semaine" suivi du numéro (ex: semaine4, semaine47)
+          </div>
+          
+          <!-- Suggestions de semaines -->
+          <div *ngIf="downloadPhaseForm.semaine.trim() && errorMessage()" class="mt-3">
+            <p class="text-sm text-gray-400 mb-2">Essayez ces semaines courantes :</p>
+            <div class="flex flex-wrap gap-2">
+              <button 
+                type="button"
+                (click)="downloadPhaseForm.semaine = 'semaine4'"
+                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
+                semaine4
+              </button>
+              <button 
+                type="button"
+                (click)="downloadPhaseForm.semaine = 'semaine47'"
+                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
+                semaine47
+              </button>
+              <button 
+                type="button"
+                (click)="downloadPhaseForm.semaine = 'semaine48'"
+                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
+                semaine48
+              </button>
+              <button 
+                type="button"
+                (click)="downloadPhaseForm.semaine = 'semaine49'"
+                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
+                semaine49
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="flex gap-4">
+          <button 
+            type="button" 
+            (click)="onCancelDownloadPhase()"
+            class="flex-1 py-4 rounded-xl font-semibold transition-all duration-300 bg-gray-600 hover:bg-gray-500 text-white">
+            Annuler
+          </button>
+          
+          <button 
+            type="submit" 
+            [disabled]="loading() || !downloadPhaseForm.semaine.trim()"
+            class="flex-1 submit-btn py-4 rounded-xl font-semibold transition-all duration-300 bg-red-600 hover:bg-red-500 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="flex items-center justify-center">
+              <span *ngIf="loading()" class="loader-small mr-2"></span>
+              {{ loading() ? 'Préparation du téléchargement...' : 
+                 '📥 Télécharger Excel' }}
+              <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </form>
+      
+      <!-- Statistiques de la semaine (si disponibles) -->
+      <div *ngIf="weekStats() && downloadPhaseForm.semaine.trim()" class="mt-8 pt-8 border-t border-gray-700">
+        <h3 class="text-lg font-semibold text-red-400 mb-4">
+          Statistiques pour "{{ downloadPhaseForm.semaine }}"
+        </h3>
+        
+        <div *ngIf="loadingStats()" class="text-center py-4">
+          <div class="loader-small mx-auto"></div>
+          <p class="text-gray-400 mt-2">Chargement des statistiques...</p>
+        </div>
+        
+        <div *ngIf="weekStats() && !loadingStats() && weekStats().message" 
+             class="p-4 bg-yellow-900/20 border border-yellow-700/30 rounded-xl">
+          <div class="flex items-center text-yellow-300">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            </svg>
+            <span>{{ weekStats().message }}</span>
+          </div>
+        </div>
+        
+        <div *ngIf="weekStats() && !loadingStats() && !weekStats().message" 
+             class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="stat-card bg-gradient-to-br from-red-600/20 to-red-800/20">
+            <div class="text-2xl font-bold text-red-400">{{ weekStats()!.totalRapports || 0 }}</div>
+            <div class="text-red-200">Rapports</div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-orange-600/20 to-orange-800/20">
+            <div class="text-2xl font-bold text-orange-400">{{ weekStats()!.totalOuvriers || 0 }}</div>
+            <div class="text-orange-200">Ouvriers</div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-yellow-600/20 to-yellow-800/20">
+            <div class="text-2xl font-bold text-yellow-400">{{ weekStats()!.totalLignes || 0 }}</div>
+            <div class="text-yellow-200">Lignes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
     <!-- Onglet: Créer une ligne -->
     <div *ngIf="activeTab() === 'create'" class="fade-in">

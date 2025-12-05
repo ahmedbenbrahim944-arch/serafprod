@@ -1,5 +1,5 @@
 // src/app/prod/prod.component.ts
-import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef,effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -13,6 +13,13 @@ import { OuvrierService } from './ouvrier.service';
 import { PhaseService } from './phase.service';
 import { SemaineService } from './semaine.service';
 import { UserService } from './user.service';
+import { HttpClient } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
+import { RapportPhaseService } from '../prod/rapport-phase.service';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+
+
 
 interface CreateLineForm {
   ligne: string;
@@ -43,6 +50,13 @@ interface WeekForm {
     nom?: string;
     dateDebut?: string;
     dateFin?: string;
+  };
+}
+
+interface DownloadPhaseForm {
+  semaine: string;
+  errors: {
+    semaine?: string;
   };
 }
 
@@ -115,6 +129,8 @@ export class ProdComponent implements OnInit {
   private phaseService = inject(PhaseService);
   private semaineService = inject(SemaineService);
   private userService = inject(UserService);
+  private http = inject(HttpClient);
+  private rapportPhaseService = inject(RapportPhaseService);
 
   showImageUploadModal = false;
   selectedLineImage: File | null = null;
@@ -132,6 +148,14 @@ export class ProdComponent implements OnInit {
   particles = signal<any[]>([]);
   users = signal<User[]>([]);
   errorMessage = signal<string | null>(null);
+
+  weekStats = signal<any>(null);
+loadingStats = signal(false);
+statsLoadedOnce = signal(false);
+downloadPhaseForm: DownloadPhaseForm = {
+  semaine: '',
+  errors: {}
+};
   
   
 
@@ -203,12 +227,20 @@ export class ProdComponent implements OnInit {
   private totalLinesCount = signal(0);
 
   ngOnInit() {
-    this.generateParticles();
-    this.generateAvailableWeeks();
-    this.loadLines();
-    this.loadUsers();
-    this.loadStats();
-  }
+  this.generateParticles();
+  this.generateAvailableWeeks();
+  this.loadLines();
+  this.loadUsers();
+  this.loadStats();
+  
+  // Watcher pour le changement de semaine
+  effect(() => {
+    const semaine = this.downloadPhaseForm.semaine;
+    if (semaine.trim()) {
+      this.loadWeekStats(semaine);
+    }
+  });
+}
 
   phases = signal<any[]>([]);
 selectedPhaseForEdit: any = null;
@@ -1416,5 +1448,350 @@ selectRefForTimeSetting(ligne: string, reference: string) {
       formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, 100);
+}
+async onDownloadPhaseReports() {
+  // Validation
+  this.downloadPhaseForm.errors = {};
+  let hasErrors = false;
+
+  if (!this.downloadPhaseForm.semaine.trim()) {
+    this.downloadPhaseForm.errors.semaine = 'Le nom de la semaine est requis';
+    hasErrors = true;
+  }
+
+  if (hasErrors) return;
+
+  this.loading.set(true);
+  this.errorMessage.set(null);
+
+  try {
+    // 1. Récupérer les données depuis le backend
+    const rapports = await this.getPhaseReportsForWeek(this.downloadPhaseForm.semaine.trim());
+    
+    // VÉRIFICATION SI LA SEMAINE EXISTE
+    if (!rapports) {
+      this.errorMessage.set(`Erreur lors de la récupération des données pour la semaine "${this.downloadPhaseForm.semaine}"`);
+      this.loading.set(false);
+      return;
+    }
+    
+    if (rapports.length === 0) {
+      this.errorMessage.set(`⚠️ Aucun rapport trouvé pour la semaine "${this.downloadPhaseForm.semaine}"`);
+      this.loading.set(false);
+      return;
+    }
+
+    // 2. Générer le fichier Excel
+    await this.generateExcelFile(rapports, this.downloadPhaseForm.semaine.trim());
+    
+    this.showSuccessMessage(`✅ Rapports de la semaine "${this.downloadPhaseForm.semaine}" téléchargés avec succès !`);
+    
+  } catch (error: any) {
+    console.error('Erreur lors du téléchargement:', error);
+    
+    // Messages d'erreur spécifiques
+    if (error.status === 404) {
+      this.errorMessage.set(`❌ La semaine "${this.downloadPhaseForm.semaine}" n'existe pas dans la base de données`);
+    } else if (error.status === 500) {
+      this.errorMessage.set('❌ Erreur serveur. Veuillez réessayer plus tard');
+    } else if (error.message && error.message.includes('semaine')) {
+      this.errorMessage.set(`❌ Semaine "${this.downloadPhaseForm.semaine}" introuvable`);
+    } else {
+      this.errorMessage.set(error.message || '❌ Erreur lors du téléchargement des rapports');
+    }
+  } finally {
+    this.loading.set(false);
+  }
+}
+
+// Méthode pour récupérer les rapports depuis le backend
+// Méthode pour récupérer les rapports depuis le backend
+private getPhaseReportsForWeek(semaine: string): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    this.rapportPhaseService.getRapportsBySemaine(semaine)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(error => {
+          // Rejeter avec l'erreur pour pouvoir la traiter dans onDownloadPhaseReports
+          reject(error);
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          if (response && response.rapports) {
+            resolve(response.rapports);
+          } else if (response && response.message) {
+            // Si le backend retourne un message d'erreur
+            reject(new Error(response.message));
+          } else {
+            resolve([]);
+          }
+        },
+        error: (error) => {
+          reject(error);
+        }
+      });
+  });
+}
+// Ajoutez cette méthode dans la classe ProdComponent
+onSemaineChange(value: string) {
+  // Réinitialiser les messages d'erreur
+  this.errorMessage.set(null);
+  this.downloadPhaseForm.errors = {};
+  
+  // Charger les statistiques si la semaine n'est pas vide
+  if (value && value.trim()) {
+    this.loadWeekStats(value.trim());
+  } else {
+    this.weekStats.set(null);
+    this.statsLoadedOnce.set(false);
+  }
+}
+
+
+// Méthode pour charger les statistiques de la semaine
+loadWeekStats(semaine: string) {
+  if (!semaine.trim()) {
+    this.weekStats.set(null);
+    return;
+  }
+
+  this.loadingStats.set(true);
+  
+  this.rapportPhaseService.getStatsSemaine(semaine)
+    .pipe(
+      takeUntilDestroyed(this.destroyRef),
+      catchError(error => {
+        console.log('Aucune statistique disponible pour cette semaine:', error);
+        
+        // Afficher un message dans l'interface
+        if (error.status === 404) {
+          this.weekStats.set({
+            message: `La semaine "${semaine}" n'existe pas`,
+            totalRapports: 0,
+            totalOuvriers: 0,
+            totalLignes: 0
+          });
+        } else {
+          this.weekStats.set(null);
+        }
+        
+        return of(null);
+      }),
+      finalize(() => {
+        this.loadingStats.set(false);
+        this.statsLoadedOnce.set(true);
+      })
+    )
+    .subscribe({
+      next: (stats) => {
+        this.weekStats.set(stats);
+      }
+    });
+}
+// Méthode pour générer le fichier Excel
+
+private async generateExcelFile(rapports: any[], semaine: string): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(`Rapports ${semaine}`);
+  
+  // En-têtes BASÉS SUR VOTRE TABLEAU SQL
+  worksheet.columns = [
+    { header: 'ID', key: 'id', width: 10 },
+    { header: 'Semaine', key: 'semaine', width: 15 },
+    { header: 'Jour', key: 'jour', width: 15 },
+    { header: 'Ligne', key: 'ligne', width: 20 },
+    { header: 'Matricule', key: 'matricule', width: 15 },
+    { header: 'Nom Prénom', key: 'nomPrenom', width: 25 },
+    { header: 'Date Création', key: 'createdAt', width: 25 },
+    { header: 'Date Modification', key: 'updatedAt', width: 25 },
+    { header: 'Phases', key: 'phases', width: 40 },
+    { header: 'Total Heures/Jour', key: 'totalHeuresJour', width: 20 },
+    { header: 'Heures Restantes', key: 'heuresRestantes', width: 20 },
+    { header: 'Nb Phases/Jour', key: 'nbPhasesJour', width: 20 },
+    { header: 'PCS Prod Ligne', key: 'pcsProdLigne', width: 20 }
+  ];
+  
+  // Données - UTILISER LES VRAIS CHAMPS DE VOTRE BASE
+  rapports.forEach((rapport, index) => {
+    // Traiter les phases qui semblent être un JSON string
+    let phasesDisplay = 'N/A';
+    if (rapport.phases) {
+      try {
+        // Si c'est une string JSON, la parser
+        if (typeof rapport.phases === 'string') {
+          const phasesParsed = JSON.parse(rapport.phases);
+          phasesDisplay = Array.isArray(phasesParsed) 
+            ? phasesParsed.map((p: any) => `Phase ${p.phase}: ${p.heure}h`).join(', ')
+            : JSON.stringify(phasesParsed);
+        } else if (Array.isArray(rapport.phases)) {
+          phasesDisplay = rapport.phases.map((p: any) => `Phase ${p.phase}: ${p.heure}h`).join(', ');
+        }
+      } catch (e) {
+        phasesDisplay = rapport.phases;
+      }
+    }
+    
+    const row = worksheet.addRow({
+      id: rapport.id || index + 1,
+      semaine: rapport.semaine || 'N/A',
+      jour: rapport.jour || 'N/A',
+      ligne: rapport.ligne || 'N/A',
+      matricule: rapport.matricule || 'N/A',
+      nomPrenom: rapport.nomPrenom || 'N/A',
+      createdAt: rapport.createdAt 
+        ? this.formatDateTime(rapport.createdAt) 
+        : 'N/A',
+      updatedAt: rapport.updatedAt 
+        ? this.formatDateTime(rapport.updatedAt) 
+        : 'N/A',
+      phases: phasesDisplay,
+      totalHeuresJour: rapport.totalHeuresJour || 0,
+      heuresRestantes: rapport.heuresRestantes || 0,
+      nbPhasesJour: rapport.nbPhasesJour || 0,
+      pcsProdLigne: rapport.pcsProdLigne || 0
+    });
+    
+    // Style alterné
+    if (index % 2 === 0) {
+      row.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'F8F9FA' }
+      };
+    }
+    
+    // Format pour les nombres
+    const totalHeuresCell = row.getCell('totalHeuresJour');
+    totalHeuresCell.numFmt = '0.00';
+    
+    const heuresRestantesCell = row.getCell('heuresRestantes');
+    heuresRestantesCell.numFmt = '0.00';
+  });
+  
+  // Style des en-têtes
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { 
+    bold: true, 
+    color: { argb: 'FFFFFF' },
+    size: 12
+  };
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: '2E7D32' } // Vert foncé
+  };
+  headerRow.alignment = { 
+    vertical: 'middle', 
+    horizontal: 'center',
+    wrapText: true
+  };
+  headerRow.height = 30;
+  
+  // Style des bordures
+  worksheet.eachRow((row, rowNumber) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+  });
+  
+  // Ajuster automatiquement la largeur des colonnes
+  worksheet.columns.forEach(column => {
+    let maxLength = 0;
+    column.eachCell!({ includeEmpty: true }, (cell) => {
+      const cellLength = cell.value ? cell.value.toString().length : 0;
+      maxLength = Math.max(maxLength, cellLength);
+    });
+    column.width = Math.min(Math.max(maxLength + 2, column.width || 0), 50);
+  });
+  
+  // Ajouter un titre
+  const titleRow = worksheet.insertRow(1, [`RAPPORTS DE PRODUCTION - ${semaine.toUpperCase()}`]);
+  titleRow.height = 40;
+  const titleCell = titleRow.getCell(1);
+  titleCell.font = { 
+    bold: true, 
+    size: 16,
+    color: { argb: 'FFFFFF' }
+  };
+  titleCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: '1565C0' } // Bleu
+  };
+  titleCell.alignment = { 
+    vertical: 'middle', 
+    horizontal: 'center' 
+  };
+  worksheet.mergeCells(1, 1, 1, worksheet.columnCount);
+  
+  // Ajouter un pied de page avec des statistiques
+  const statsRow = worksheet.addRow([]);
+  const statsCell = statsRow.getCell(1);
+  statsCell.value = `Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')} | Total: ${rapports.length} rapports`;
+  statsCell.font = { italic: true, size: 10, color: { argb: '666666' } };
+  statsCell.alignment = { horizontal: 'right' };
+  worksheet.mergeCells(statsRow.number, 1, statsRow.number, worksheet.columnCount);
+  
+  // Générer le fichier Excel
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  });
+  
+  // Nom du fichier avec date
+  const dateStr = new Date().toISOString().split('T')[0];
+  saveAs(blob, `rapports-production-${semaine}-${dateStr}.xlsx`);
+}
+
+// Ajoutez cette méthode utilitaire pour formater les dates
+private formatDateTime(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    return dateString;
+  }
+}
+
+// Méthode pour annuler
+onCancelDownloadPhase() {
+  this.resetDownloadPhaseForm();
+  this.activeTab.set('view');
+}
+
+// Méthode pour réinitialiser le formulaire
+private resetDownloadPhaseForm() {
+  this.downloadPhaseForm = {
+    semaine: '',
+    errors: {}
+  };
+}
+
+// Ajoutez ces méthodes utilitaires si nécessaire
+private getAuthHeaders(): HttpHeaders {
+  const token = this.authService.getToken();
+  let headers = new HttpHeaders({
+    'Content-Type': 'application/json'
+  });
+  
+  if (token) {
+    headers = headers.set('Authorization', `Bearer ${token}`);
+  }
+  
+  return headers;
 }
 }

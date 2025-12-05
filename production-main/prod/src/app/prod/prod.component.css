@@ -411,7 +411,7 @@ select.form-input optgroup {
   @apply border-red-500;
   box-shadow: 0 0 15px rgba(255, 71, 87, 0.3);
 }
-/* Ajoutez à prod.component.css */
+
 .select-with-search {
   position: relative;
 }
@@ -438,7 +438,7 @@ select.form-input optgroup {
   transform: translateY(-50%);
   color: #9ca3af;
 }
-/* Dans prod.component.css */
+
 .time-calculator {
   background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%);
   border: 1px solid rgba(251, 191, 36, 0.2);
@@ -452,7 +452,6 @@ select.form-input optgroup {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
 }
-/* Dans prod.component.css */
 .phase-card {
   transition: all 0.2s ease;
 }
