@@ -14,15 +14,11 @@
   </div>
 
   <!-- Container principal -->
-  <div class="relative z-10 container mx-auto px-4 py-8">
+  <div class="relative z-10 container mx-auto px-2 py-8">
     <!-- Header avec bouton de retour -->
     <header class="text-center mb-12 relative">
       <!-- Bouton de retour au login -->
-     
-      
-      <h1 class="neon-title text-5xl font-bold mb-4 tracking-wider">
-        PDP
-      </h1>
+
       
     </header>
 
@@ -190,7 +186,7 @@
       </div>
 
       <!-- Liste des lignes -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-17">
         <div *ngFor="let line of lines()" 
              (click)="selectLine(line)"
              class="line-card group cursor-pointer transform hover:scale-105 transition-all duration-300">
