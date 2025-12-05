@@ -1,8 +1,5 @@
-<div class="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white relative overflow-hidden">
   <!-- Background avec particules -->
-  <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
-       style="background-image: url('https://www.tannerag.ch/Marketing/News%20and%20Social%20Media/38748/image-thumb__38748__contentImageLarge/production-process.e47f5cea.jpg')">
-  </div>
+ 
 
   <!-- Système de particules -->
   <div class="absolute inset-0 pointer-events-none overflow-hidden">
@@ -21,112 +18,137 @@
     <!-- Header avec bouton de retour -->
     <header class="text-center mb-12 relative">
       <!-- Bouton de retour au login -->
-      <div class="absolute left-0 top-1/2 transform -translate-y-1/2">
-        <button 
-          (click)="goBackToLogin()"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-red-600 hover:bg-red-500 text-white flex items-center shadow-lg hover:shadow-xl">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-          </svg>
-          Retour Login
-        </button>
-      </div>
+     
       
       <h1 class="neon-title text-5xl font-bold mb-4 tracking-wider">
-        Gestionnaire de Production
+        PDP
       </h1>
-      <p class="text-cyan-200 text-xl max-w-2xl mx-auto">
-        Interface d'administration des lignes et références de production industrielle
-      </p>
+      
     </header>
 
     <!-- Navigation par onglets -->
-    <div class="flex justify-center mb-8">
-      <div class="bg-gray-800/80 backdrop-blur-sm rounded-2xl p-2 border border-gray-600/30">
+    <div class="app-container">
+  <!-- Bouton hamburger pour mobile -->
+  <button class="hamburger-menu" (click)="toggleMobileSidebar()">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+  </button>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.mobile-open]="mobileMenuOpen">
+    <!-- Header de la sidebar -->
+    <div class="sidebar-header">
+      <h1 class="sidebar-title">PDP</h1>
+      <p class="text-cyan-300 text-sm">Système de Gestion</p>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <div class="nav-section">
         <button 
           (click)="setActiveTab('view')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'view' ? 
-                   'bg-cyan-600 text-white shadow-lg shadow-cyan-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          📋 Voir les Lignes
+          class="nav-button"
+          [class.active]="activeTab() === 'view'">
+          <span class="nav-button-icon">📋</span>
+          Voir les Lignes
         </button>
+
         <button 
           (click)="setActiveTab('create')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300 mx-2"
-          [class]="activeTab() === 'create' ? 
-                   'bg-green-600 text-white shadow-lg shadow-green-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          ➕ Nouvelle Ligne
+          class="nav-button"
+          [class.active]="activeTab() === 'create'">
+          <span class="nav-button-icon">➕</span>
+          Nouvelle Ligne
         </button>
+
         <button 
           (click)="setActiveTab('add-ref')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'add-ref' ? 
-                   'bg-blue-600 text-white shadow-lg shadow-blue-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          🔧 Ajouter Références
+          class="nav-button"
+          [class.active]="activeTab() === 'add-ref'">
+          <span class="nav-button-icon">🔧</span>
+          Ajouter Références
         </button>
+
         <button 
           (click)="setActiveTab('new-week')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'new-week' ? 
-                   'bg-purple-600 text-white shadow-lg shadow-purple-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          📅 Nouvelle Semaine
+          class="nav-button"
+          [class.active]="activeTab() === 'new-week'">
+          <span class="nav-button-icon">📅</span>
+          Nouvelle Semaine
         </button>
+
         <button 
           [routerLink]="['/planification']"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'planning' ? 
-                   'bg-orange-600 text-white shadow-lg shadow-orange-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          🗓️ Planification
+          class="nav-button"
+          [class.active]="activeTab() === 'planning'">
+          <span class="nav-button-icon">🗓️</span>
+          Planification
         </button>
+
         <button 
           (click)="setActiveTab('add-user')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'add-user' ? 
-                   'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          👤 Ajouter Utilisateur
+          class="nav-button"
+          [class.active]="activeTab() === 'add-user'">
+          <span class="nav-button-icon">👤</span>
+          Ajouter Utilisateur
         </button>
-        <!-- NOUVEAUX ONGLETS AJOUTÉS -->
+
         <button 
           (click)="setActiveTab('add-time')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'add-time' ? 
-                   'bg-yellow-600 text-white shadow-lg shadow-yellow-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          ⏱️ Ajouter Temps
+          class="nav-button"
+          [class.active]="activeTab() === 'add-time'">
+          <span class="nav-button-icon">⏱️</span>
+          Ajouter Temps
         </button>
+
         <button 
           (click)="setActiveTab('add-worker')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'add-worker' ? 
-                   'bg-pink-600 text-white shadow-lg shadow-pink-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          👷 Ajouter Ouvrier
+          class="nav-button"
+          [class.active]="activeTab() === 'add-worker'">
+          <span class="nav-button-icon">👷</span>
+          Ajouter Ouvrier
         </button>
+
         <button 
           (click)="setActiveTab('add-phase')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'add-phase' ? 
-                   'bg-teal-600 text-white shadow-lg shadow-teal-600/25' : 
-                   'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          🔄 Ajouter Phase
+          class="nav-button"
+          [class.active]="activeTab() === 'add-phase'">
+          <span class="nav-button-icon">🔄</span>
+          Ajouter Phase
         </button>
-        <!-- Dans la section Navigation par onglets -->
+
         <button 
           (click)="setActiveTab('download-phase')"
-          class="px-6 py-3 rounded-xl font-semibold transition-all duration-300"
-          [class]="activeTab() === 'download-phase' ? 
-                  'bg-red-600 text-white shadow-lg shadow-red-600/25' : 
-                  'text-gray-300 hover:text-white hover:bg-gray-700/50'">
-          📥 Télécharger Phase
+          class="nav-button"
+          [class.active]="activeTab() === 'download-phase'">
+          <span class="nav-button-icon">📥</span>
+          Télécharger Phase
+        </button>
+
+        <button 
+          (click)="setActiveTab('download-line-summary')"
+          class="nav-button"
+          [class.active]="activeTab() === 'download-line-summary'">
+          <span class="nav-button-icon">📊</span>
+          Résumé Ligne
         </button>
       </div>
-    </div>
+    </nav>
+
+    <!-- Bouton de déconnexion -->
+    <button class="logout-button" (click)="goBackToLogin()">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+      </svg>
+      Retour Login
+    </button>
+  </aside>
+
+  <!-- Contenu principal -->
+  <main class="main-content">
+    <!-- Container du contenu -->
+    <div class="container mx-auto px-4 py-8">
 
     <!-- Statistiques -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -251,7 +273,6 @@
               [(ngModel)]="downloadPhaseForm.semaine" 
               name="semaine"
               (ngModelChange)="onSemaineChange($event)"
-              placeholder="Ex: semaine4, semaine47, semaine48"
               class="form-input pl-12"
               [class.error]="downloadPhaseForm.errors.semaine"
               [class.border-red-500]="errorMessage()?.includes('n\'existe pas')">            
@@ -329,6 +350,8 @@
           </button>
         </div>
       </form>
+
+
       
       <!-- Statistiques de la semaine (si disponibles) -->
       <div *ngIf="weekStats() && downloadPhaseForm.semaine.trim()" class="mt-8 pt-8 border-t border-gray-700">
@@ -367,6 +390,134 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="activeTab() === 'download-line-summary'" class="fade-in">
+  <div class="max-w-2xl mx-auto">
+    <div class="creation-card">
+      <h2 class="text-2xl font-bold text-amber-400 mb-6">Télécharger le Résumé par Ligne</h2>
+      <p class="text-gray-400 mb-6">Générez un rapport Excel détaillé pour une ligne spécifique sur une semaine</p>
+      
+      <!-- Message d'erreur -->
+      <div *ngIf="errorMessage()" class="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-xl animate-shake">
+        <div class="flex items-start">
+          <svg class="w-6 h-6 text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div>
+            <p class="text-red-300 font-medium">{{ errorMessage() }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <form (ngSubmit)="onDownloadLineSummary()" class="space-y-6">
+        <!-- Sélection de la semaine -->
+        <div>
+          <label class="form-label">Sélectionner la Semaine *</label>
+          <div class="relative">
+            <input 
+              type="text" 
+              [(ngModel)]="downloadLineSummaryForm.semaine" 
+              name="semaine"
+              (ngModelChange)="onSemaineChangeForLineSummary($event)"
+              class="form-input pl-12"
+              placeholder="Ex: semaine4"
+              [class.error]="downloadLineSummaryForm.errors.semaine">
+            <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+          </div>
+          <div *ngIf="downloadLineSummaryForm.errors.semaine" class="form-error">
+            {{ downloadLineSummaryForm.errors.semaine }}
+          </div>
+        </div>
+
+        <!-- Sélection de la ligne -->
+        <div>
+          <label class="form-label">Sélectionner la Ligne *</label>
+          <select 
+            [(ngModel)]="downloadLineSummaryForm.ligne" 
+            name="ligne"
+            (change)="onLigneSelectedForSummary()"
+            class="form-input"
+            [class.error]="downloadLineSummaryForm.errors.ligne">
+            <option value="" disabled selected>Sélectionnez une ligne</option>
+            <option *ngFor="let line of lines()" [value]="line.ligne">
+              {{ line.ligne }}
+            </option>
+          </select>
+          <div *ngIf="downloadLineSummaryForm.errors.ligne" class="form-error">
+            {{ downloadLineSummaryForm.errors.ligne }}
+          </div>
+        </div>
+
+        <!-- Aperçu des statistiques -->
+        <div *ngIf="lineSummaryStats()" class="mt-6 p-4 bg-gray-800/50 rounded-xl border border-amber-500/30">
+          <h3 class="text-lg font-semibold text-amber-400 mb-3">Aperçu des données</h3>
+          
+          <!-- Statistiques principales -->
+          <div *ngIf="lineSummaryStats().stats" class="grid grid-cols-2 gap-4 mb-4">
+            <div class="stat-item">
+              <div class="text-green-300 font-bold text-xl">{{ lineSummaryStats().stats.totalQtePlanifiee || 0 }}</div>
+              <div class="text-gray-300 text-sm">Qté Planifiée</div>
+            </div>
+            <div class="stat-item">
+              <div class="text-blue-300 font-bold text-xl">{{ lineSummaryStats().stats.totalDecProduction || 0 }}</div>
+              <div class="text-gray-300 text-sm">Déc. Production</div>
+            </div>
+            <div class="stat-item">
+              <div class="text-purple-300 font-bold text-xl">{{ lineSummaryStats().stats.pcsProdTotal || 0 }}%</div>
+              <div class="text-gray-300 text-sm">PCS Prod Total</div>
+            </div>
+          </div>
+
+          <!-- Liste des planifications -->
+          <div *ngIf="lineSummaryStats().planifications && lineSummaryStats().planifications.length > 0" class="mt-4">
+            <h4 class="text-amber-300 font-medium mb-2">Planifications ({{ lineSummaryStats().planifications.length }})</h4>
+            <div class="space-y-2 max-h-40 overflow-y-auto">
+              <div *ngFor="let plan of lineSummaryStats().planifications.slice(0, 5)" 
+                   class="p-2 bg-gray-700/30 rounded text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-300">{{ plan.jour }}</span>
+                  <span class="text-green-300">{{ plan.reference }}</span>
+                  <span class="text-cyan-300">{{ plan.qtePlanifiee }} unités</span>
+                </div>
+              </div>
+              <div *ngIf="lineSummaryStats().planifications.length > 5" class="text-center text-gray-400 text-sm">
+                + {{ lineSummaryStats().planifications.length - 5 }} autres...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="flex gap-4">
+          <button 
+            type="button" 
+            (click)="onCancelLineSummary()"
+            class="flex-1 py-4 rounded-xl font-semibold transition-all duration-300 bg-gray-600 hover:bg-gray-500 text-white">
+            Annuler
+          </button>
+          
+          <button 
+            type="submit" 
+            [disabled]="loading() || !downloadLineSummaryForm.semaine.trim() || !downloadLineSummaryForm.ligne.trim()"
+            class="flex-1 submit-btn py-4 rounded-xl font-semibold transition-all duration-300 bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="flex items-center justify-center">
+              <span *ngIf="loading()" class="loader-small mr-2"></span>
+              {{ loading() ? 'Génération en cours...' : 
+                 '📊 Télécharger Résumé' }}
+              <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -1539,4 +1690,3 @@
       <p class="text-cyan-400 mt-4 font-semibold">Chargement des données...</p>
     </div>
   </div>
-</div>

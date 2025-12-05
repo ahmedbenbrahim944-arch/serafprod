@@ -100,6 +100,14 @@ interface PhaseForm {
     phase?: string;
   };
 }
+interface DownloadLineSummaryForm {
+  semaine: string;
+  ligne: string;
+  errors: {
+    semaine?: string;
+    ligne?: string;
+  };
+}
 
 interface User {
   id?: number; // Rendre id optionnel pour correspondre au service
@@ -156,6 +164,14 @@ downloadPhaseForm: DownloadPhaseForm = {
   semaine: '',
   errors: {}
 };
+
+downloadLineSummaryForm: DownloadLineSummaryForm = {
+  semaine: '',
+  ligne: '',
+  errors: {}
+};
+
+lineSummaryStats = signal<any>(null);
   
   
 
@@ -238,6 +254,12 @@ downloadPhaseForm: DownloadPhaseForm = {
     const semaine = this.downloadPhaseForm.semaine;
     if (semaine.trim()) {
       this.loadWeekStats(semaine);
+    }
+  });
+    effect(() => {
+    const { semaine, ligne } = this.downloadLineSummaryForm;
+    if (semaine.trim() && ligne.trim()) {
+      this.loadLineSummaryData();
     }
   });
 }
@@ -596,15 +618,7 @@ checkIfPhaseExists(): boolean {
     this.selectedLine.set(null);
   }
 
-  setActiveTab(tab: string) {
-    this.activeTab.set(tab);
-    this.searchQuery.set('');
-    this.errorMessage.set(null);
-    
-    if (tab === 'view') {
-      this.loadLines();
-    }
-  }
+  
 
   private showSuccessMessage(message: string) {
     this.successMessage.set(message);
@@ -1614,24 +1628,9 @@ private async generateExcelFile(rapports: any[], semaine: string): Promise<void>
   ];
   
   // Données - UTILISER LES VRAIS CHAMPS DE VOTRE BASE
-  rapports.forEach((rapport, index) => {
-    // Traiter les phases qui semblent être un JSON string
-    let phasesDisplay = 'N/A';
-    if (rapport.phases) {
-      try {
-        // Si c'est une string JSON, la parser
-        if (typeof rapport.phases === 'string') {
-          const phasesParsed = JSON.parse(rapport.phases);
-          phasesDisplay = Array.isArray(phasesParsed) 
-            ? phasesParsed.map((p: any) => `Phase ${p.phase}: ${p.heure}h`).join(', ')
-            : JSON.stringify(phasesParsed);
-        } else if (Array.isArray(rapport.phases)) {
-          phasesDisplay = rapport.phases.map((p: any) => `Phase ${p.phase}: ${p.heure}h`).join(', ');
-        }
-      } catch (e) {
-        phasesDisplay = rapport.phases;
-      }
-    }
+   rapports.forEach((rapport, index) => {
+    // Traiter les phases - CORRECTION ICI
+    let phasesDisplay = this.formatPhasesForDisplay(rapport.phases);
     
     const row = worksheet.addRow({
       id: rapport.id || index + 1,
@@ -1749,6 +1748,103 @@ private async generateExcelFile(rapports: any[], semaine: string): Promise<void>
   const dateStr = new Date().toISOString().split('T')[0];
   saveAs(blob, `rapports-production-${semaine}-${dateStr}.xlsx`);
 }
+// CORRECTION COMPLÈTE DE formatPhasesForDisplay
+private formatPhasesForDisplay(phasesData: any): string {
+  if (!phasesData) {
+    return 'Aucune phase';
+  }
+  
+  try {
+    let phasesArray: any[] = [];
+    
+    // Cas 1: C'est déjà un tableau
+    if (Array.isArray(phasesData)) {
+      phasesArray = phasesData;
+    }
+    // Cas 2: C'est une string JSON
+    else if (typeof phasesData === 'string') {
+      // Nettoyer la string
+      let cleanString = phasesData.trim();
+      
+      // Remplacer les éventuelles guillemets simples par doubles
+      cleanString = cleanString.replace(/'/g, '"');
+      // Supprimer les backslashes inutiles
+      cleanString = cleanString.replace(/\\/g, '');
+      
+      if (cleanString.startsWith('[') && cleanString.endsWith(']')) {
+        try {
+          phasesArray = JSON.parse(cleanString);
+        } catch (parseError) {
+          console.log('Erreur parsing, tentative alternative...');
+          
+          // Essayer de réparer le JSON corrompu
+          // Si le JSON a des clés sans guillemets
+          cleanString = cleanString.replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3');
+          
+          try {
+            phasesArray = JSON.parse(cleanString);
+          } catch (e) {
+            console.log('Échec après réparation:', e);
+            return `Format invalide: ${phasesData.substring(0, 100)}...`;
+          }
+        }
+      }
+    }
+    
+    // Maintenant, traiter le tableau obtenu
+    const formattedPhases: string[] = [];
+    
+    phasesArray.forEach((phaseObj, index) => {
+      if (phaseObj && typeof phaseObj === 'object') {
+        // VOTRE CAS : Les clés sont des nombres (4104, 4201, etc.)
+        // Exemple: { "4104": "quelque chose" }
+        const keys = Object.keys(phaseObj);
+        
+        if (keys.length > 0) {
+          keys.forEach(key => {
+            const value = phaseObj[key];
+            
+            // Déterminer ce qu'est la valeur
+            // C'est probablement l'heure ou la durée
+            if (typeof value === 'object') {
+              // Si la valeur est un objet
+              const subKeys = Object.keys(value);
+              const hourValue = value.heure || value.Heure || value.hours || 
+                               value.temps || value.duree || '?';
+              formattedPhases.push(`Phase ${key}: ${hourValue}`);
+            } else {
+              // Si la valeur est une string ou un nombre
+              const displayValue = value || '?';
+              formattedPhases.push(`Phase ${key}: ${displayValue}`);
+            }
+          });
+        } else {
+          // Format standard : { "phase": "4104", "heure": "4" }
+          const phaseNumber = phaseObj.phase || phaseObj.Phase || 
+                            phaseObj.numero || phaseObj.Numero || 
+                            phaseObj.id || `Phase ${index + 1}`;
+          
+          const heureValue = phaseObj.heure || phaseObj.Heure || 
+                           phaseObj.hours || phaseObj.Hours || 
+                           phaseObj.temps || phaseObj.duree || 
+                           phaseObj.value || '?';
+          
+          formattedPhases.push(`Phase ${phaseNumber}: ${heureValue}`);
+        }
+      }
+    });
+    
+    return formattedPhases.length > 0 
+      ? formattedPhases.join(', ') 
+      : 'Aucune phase valide';
+    
+  } catch (error) {
+    console.error('Erreur critique lors du formatage:', error);
+    return typeof phasesData === 'string' 
+      ? `Erreur: ${phasesData.substring(0, 50)}...` 
+      : 'Format inconnu';
+  }
+}
 
 // Ajoutez cette méthode utilitaire pour formater les dates
 private formatDateTime(dateString: string): string {
@@ -1794,4 +1890,360 @@ private getAuthHeaders(): HttpHeaders {
   
   return headers;
 }
+onSemaineChangeForLineSummary(value: string) {
+  this.errorMessage.set(null);
+  this.downloadLineSummaryForm.errors = {};
+  
+  // Charger les données si semaine et ligne sont sélectionnées
+  if (value && this.downloadLineSummaryForm.ligne) {
+    this.loadLineSummaryData();
+  }
+}
+onLigneSelectedForSummary() {
+  this.errorMessage.set(null);
+  this.downloadLineSummaryForm.errors = {};
+  
+  // Charger les données si semaine est sélectionnée
+  if (this.downloadLineSummaryForm.semaine && this.downloadLineSummaryForm.ligne) {
+    this.loadLineSummaryData();
+  }
+}
+private loadLineSummaryData() {
+  if (!this.downloadLineSummaryForm.semaine.trim() || !this.downloadLineSummaryForm.ligne.trim()) {
+    return;
+  }
+
+  this.loading.set(true);
+  
+  this.semaineService.getPlanificationsVuProd(
+    this.downloadLineSummaryForm.semaine.trim(),
+    this.downloadLineSummaryForm.ligne.trim()
+  )
+    .pipe(
+      takeUntilDestroyed(this.destroyRef),
+      catchError(error => {
+        console.error('Erreur chargement données ligne:', error);
+        if (error.status === 404) {
+          this.errorMessage.set(`Aucune donnée trouvée pour ${this.downloadLineSummaryForm.ligne} en ${this.downloadLineSummaryForm.semaine}`);
+        } else {
+          this.errorMessage.set('Erreur lors du chargement des données');
+        }
+        return of(null);
+      }),
+      finalize(() => this.loading.set(false))
+    )
+    .subscribe({
+      next: (data) => {
+        if (data) {
+          this.lineSummaryStats.set(data);
+          
+          // Afficher un message de succès
+          if (data.stats) {
+            this.showSuccessMessage(`Données chargées : ${data.planifications?.length || 0} planifications trouvées`);
+          }
+        } else {
+          this.lineSummaryStats.set(null);
+        }
+      }
+    });
+}
+async onDownloadLineSummary() {
+  // Validation
+  this.downloadLineSummaryForm.errors = {};
+  let hasErrors = false;
+
+  if (!this.downloadLineSummaryForm.semaine.trim()) {
+    this.downloadLineSummaryForm.errors.semaine = 'La semaine est requise';
+    hasErrors = true;
+  }
+
+  if (!this.downloadLineSummaryForm.ligne.trim()) {
+    this.downloadLineSummaryForm.errors.ligne = 'La ligne est requise';
+    hasErrors = true;
+  }
+
+  if (hasErrors) return;
+
+  this.loading.set(true);
+  this.errorMessage.set(null);
+
+  try {
+    // 1. Récupérer les données depuis l'API
+    const data = await this.getLineSummaryData(
+      this.downloadLineSummaryForm.semaine.trim(),
+      this.downloadLineSummaryForm.ligne.trim()
+    );
+    
+    if (!data) {
+      this.errorMessage.set('Aucune donnée disponible pour cette ligne et semaine');
+      this.loading.set(false);
+      return;
+    }
+
+    // 2. Générer le fichier Excel
+    await this.generateLineSummaryExcel(
+      data,
+      this.downloadLineSummaryForm.semaine.trim(),
+      this.downloadLineSummaryForm.ligne.trim()
+    );
+    
+    this.showSuccessMessage(`Résumé de la ligne ${this.downloadLineSummaryForm.ligne} téléchargé avec succès !`);
+    
+  } catch (error: any) {
+    console.error('Erreur lors du téléchargement:', error);
+    
+    if (error.status === 404) {
+      this.errorMessage.set(`Aucune donnée trouvée pour ${this.downloadLineSummaryForm.ligne} en ${this.downloadLineSummaryForm.semaine}`);
+    } else {
+      this.errorMessage.set(error.message || 'Erreur lors de la génération du rapport');
+    }
+  } finally {
+    this.loading.set(false);
+  }
+}
+private getLineSummaryData(semaine: string, ligne: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    this.semaineService.getPlanificationsVuProd(semaine, ligne)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(error => {
+          reject(error);
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          resolve(response);
+        },
+        error: (error) => {
+          reject(error);
+        }
+      });
+  });
+}
+
+// Méthode pour générer le fichier Excel
+private async generateLineSummaryExcel(data: any, semaine: string, ligne: string): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(`Résumé ${ligne} - ${semaine}`);
+  
+  // Titre principal
+  const titleRow = worksheet.addRow([`RAPPORT DE PRODUCTION - ${ligne.toUpperCase()} - ${semaine.toUpperCase()}`]);
+  titleRow.height = 40;
+  const titleCell = titleRow.getCell(1);
+  titleCell.font = { 
+    bold: true, 
+    size: 18,
+    color: { argb: 'FFFFFF' }
+  };
+  titleCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF9800' } // Orange
+  };
+  titleCell.alignment = { 
+    vertical: 'middle', 
+    horizontal: 'center' 
+  };
+  worksheet.mergeCells(1, 1, 1, 8);
+  
+  // Section Statistiques
+  if (data.stats) {
+    const statsTitle = worksheet.addRow(['STATISTIQUES GLOBALES']);
+    statsTitle.height = 30;
+    const statsTitleCell = statsTitle.getCell(1);
+    statsTitleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFF' } };
+    statsTitleCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '2196F3' } // Bleu
+    };
+    statsTitleCell.alignment = { horizontal: 'center' };
+    worksheet.mergeCells(2, 1, 2, 8);
+    
+    // En-têtes statistiques
+    worksheet.addRow([
+      'Total Planifications',
+      'Qté Planifiée Totale',
+      'Qté Modifiée Totale',
+      'Qté Source Totale',
+      'Déc. Production',
+      'Déc. Magasin',
+      'Delta Prod Total',
+      'PCS Prod Total (%)'
+    ]);
+    
+    // Données statistiques
+    const statsRow = worksheet.addRow([
+      data.stats.totalPlanifications || 0,
+      data.stats.totalQtePlanifiee || 0,
+      data.stats.totalQteModifiee || 0,
+      data.stats.totalQteSource || 0,
+      data.stats.totalDecProduction || 0,
+      data.stats.totalDecMagasin || 0,
+      data.stats.deltaProdTotal || 0,
+      data.stats.pcsProdTotal || 0
+    ]);
+    
+    // Style des en-têtes statistiques
+    const statHeaderRow = worksheet.getRow(3);
+    statHeaderRow.font = { bold: true, color: { argb: 'FFFFFF' } };
+    statHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '607D8B' }
+    };
+    statHeaderRow.alignment = { horizontal: 'center' };
+    
+    // Style des données statistiques
+    statsRow.font = { bold: true };
+    statsRow.eachCell((cell) => {
+      if (typeof cell.value === 'number') {
+        cell.numFmt = cell.address.includes('H') ? '0.00' : '#,##0';
+      }
+    });
+    
+    worksheet.addRow([]); // Ligne vide
+  }
+  
+  // Section Détails des Planifications
+  if (data.planifications && data.planifications.length > 0) {
+    const detailsTitle = worksheet.addRow(['DÉTAILS DES PLANIFICATIONS']);
+    detailsTitle.height = 30;
+    const detailsTitleCell = detailsTitle.getCell(1);
+    detailsTitleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFF' } };
+    detailsTitleCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '4CAF50' } // Vert
+    };
+    detailsTitleCell.alignment = { horizontal: 'center' };
+    worksheet.mergeCells(detailsTitle.number, 1, detailsTitle.number, 13);
+    
+    // En-têtes détails
+    const detailHeaders = [
+      'Jour', 'Référence', 'OF', 'Qté Planifiée', 'Qté Modifiée',
+      'Emballage', 'Nb Opérateurs', 'Nb Heures Planifiées',
+      'Déc. Production', 'Déc. Magasin', 'Delta Prod',
+      'PCS Prod', 'Total Produit'
+    ];
+    
+    worksheet.addRow(detailHeaders);
+    
+    // Données des planifications
+    data.planifications.forEach((plan: any, index: number) => {
+      const row = worksheet.addRow([
+        plan.jour || '',
+        plan.reference || '',
+        plan.of || '',
+        plan.qtePlanifiee || 0,
+        plan.qteModifiee || 0,
+        plan.emballage || '',
+        plan.nbOperateurs || 0,
+        plan.nbHeuresPlanifiées || 0,
+        plan.decProduction || 0,
+        plan.decMagasin || 0,
+        plan.deltaProd || 0,
+        plan.pcsProd || 0,
+        // Calcul du total produit si nécessaire
+        (plan.qtePlanifiee || 0) - (plan.decProduction || 0)
+      ]);
+      
+      // Style alterné
+      if (index % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'F8F9FA' }
+        };
+      }
+    });
+    
+    // Style des en-têtes détails
+    const detailHeaderRow = worksheet.getRow(detailsTitle.number + 1);
+    detailHeaderRow.font = { bold: true, color: { argb: 'FFFFFF' } };
+    detailHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '757575' }
+    };
+    detailHeaderRow.alignment = { horizontal: 'center' };
+    detailHeaderRow.height = 25;
+    
+    // Ajuster les largeurs
+    worksheet.columns = [
+      { width: 15 }, { width: 20 }, { width: 15 },
+      { width: 15 }, { width: 15 }, { width: 12 },
+      { width: 15 }, { width: 20 }, { width: 15 },
+      { width: 15 }, { width: 12 }, { width: 12 },
+      { width: 15 }
+    ];
+  }
+  
+  // Pied de page
+   const footerRow = worksheet.addRow([]);
+  const footerCell = worksheet.getCell(`A${footerRow.number}`); // CORRECTION
+  footerCell.value = `Généré le ${new Date().toLocaleDateString('fr-FR')} | Total: ${data.planifications?.length || 0} planifications`;
+  footerCell.font = { italic: true, size: 10, color: { argb: '666666' } };
+  footerCell.alignment = { horizontal: 'right' };
+  worksheet.mergeCells(footerRow.number, 1, footerRow.number, 13);
+  
+  // Générer le fichier
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  });
+  
+  const dateStr = new Date().toISOString().split('T')[0];
+  saveAs(blob, `resume-production-${ligne}-${semaine}-${dateStr}.xlsx`);
+}
+
+// Méthode pour annuler
+onCancelLineSummary() {
+  this.resetDownloadLineSummaryForm();
+  this.activeTab.set('view');
+}
+
+// Réinitialiser le formulaire
+private resetDownloadLineSummaryForm() {
+  this.downloadLineSummaryForm = {
+    semaine: '',
+    ligne: '',
+    errors: {}
+  };
+  this.lineSummaryStats.set(null);
+  this.errorMessage.set(null);
+}
+mobileMenuOpen = false;
+toggleMobileSidebar() {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  // AJOUTER CETTE MÉTHODE POUR OBTENIR LE TITRE DE L'ONGLET ACTIF :
+  getTabTitle(): string {
+    const titles: { [key: string]: string } = {
+      'view': 'Vue d\'ensemble des Lignes',
+      'create': 'Créer une Nouvelle Ligne',
+      'add-ref': 'Ajouter des Références',
+      'new-week': 'Créer une Nouvelle Semaine',
+      'planning': 'Planification',
+      'add-user': 'Ajouter un Utilisateur',
+      'add-time': 'Définir le Temps par Seconde',
+      'add-worker': 'Ajouter un Ouvrier',
+      'add-phase': 'Gestion des Phases',
+      'download-phase': 'Télécharger les Rapports de Phase',
+      'download-line-summary': 'Résumé par Ligne'
+    };
+    return titles[this.activeTab()] || 'PDP - Système de Gestion';
+  }
+
+  // Modifier la méthode setActiveTab existante pour fermer le menu mobile :
+  setActiveTab(tab: string) {
+    this.activeTab.set(tab);
+    this.mobileMenuOpen = false; // Fermer le menu mobile après sélection
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.showSuccess.set(false);
+  }
+
 }
