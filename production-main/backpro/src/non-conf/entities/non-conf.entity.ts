@@ -35,6 +35,10 @@ export class NonConformite {
   @Column({ type: 'float', default: 0 })
   total: number;
 
+  // ✅ AJOUT : Champ pour le pourcentage d'écart
+  @Column({ type: 'float', default: 0, name: 'ecart_pourcentage' })
+  ecartPourcentage: number;
+
   @Column({ type: 'text', nullable: true })
   commentaire: string | null;
 

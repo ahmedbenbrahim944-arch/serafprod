@@ -8,9 +8,8 @@ import {
   Index 
 } from 'typeorm';
 
-// src/saisie-rapport/entities/saisie-rapport.entity.ts
 @Entity('saisie_rapports')
-@Index(['semaine', 'jour', 'ligne', 'matricule'], { unique: true })
+@Index(['semaine', 'jour', 'ligne', 'matricule'], { unique: true }) // ✅ CORRECTION : virgule entre chaque champ
 export class SaisieRapport {
   @PrimaryGeneratedColumn()
   id: number;
@@ -30,11 +29,9 @@ export class SaisieRapport {
   @Column({ type: 'varchar', length: 100 })
   nomPrenom: string;
 
-  // Stocker les phases et heures comme JSON
   @Column({ type: 'json' })
   phases: { phase: string; heures: number }[];
 
-  // Champs de résumé
   @Column({ type: 'float' })
   totalHeuresJour: number;
 
@@ -44,14 +41,15 @@ export class SaisieRapport {
   @Column({ type: 'int' })
   nbPhasesJour: number;
 
-  // NOUVEAU : Pourcentage de rendement (PCsProd) de la ligne
   @Column({ type: 'float', default: 0 })
   pcsProdLigne: number;
+
+  @Column({ type: 'float', default: 0, name: 'pourcentage_total_ecart' })
+  pourcentageTotalEcart: number;
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
-
 }

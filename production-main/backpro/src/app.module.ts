@@ -15,6 +15,7 @@ import { PhaseModule } from './phase/phase.module';
 import { MatierePremierModule } from './matiere-premier/matiere-premier.module';
 import { SaisieRapportModule } from './saisie-rapport/saisie-rapport.module';
 import { NonConfModule } from './non-conf/non-conf.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { NonConfModule } from './non-conf/non-conf.module';
     PhaseModule,
     MatierePremierModule,
     SaisieRapportModule,
-    NonConfModule
+    NonConfModule,
+    StatsModule
   ],
   controllers: [],
   providers: [],

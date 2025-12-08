@@ -82,6 +82,15 @@
           Planification
         </button>
 
+            <button 
+          *ngIf="isAdmin()"
+          (click)="setActiveTab('view-stats')"
+          class="nav-button"
+          [class.active]="activeTab() === 'view-stats'">
+          <span class="nav-button-icon">📈</span>
+          Voir Statistiques
+        </button>
+
         <button 
           (click)="setActiveTab('add-user')"
           class="nav-button"
@@ -1668,6 +1677,210 @@
       </div>
     </div>
   </div>
+
+  <!-- Onglet: Voir les Statistiques (Admin seulement) -->
+<div *ngIf="activeTab() === 'view-stats' && isAdmin()" class="fade-in">
+  <div class="max-w-7xl mx-auto">
+    <!-- Formulaire de sélection -->
+    <div class="creation-card mb-8">
+      <h2 class="text-2xl font-bold text-purple-400 mb-6">Voir les Statistiques</h2>
+      <p class="text-gray-400 mb-6">Sélectionnez une semaine et une ligne pour voir les graphiques statistiques</p>
+      
+      <!-- Message d'erreur -->
+      <div *ngIf="errorMessage()" class="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-xl">
+        <div class="flex items-start">
+          <svg class="w-6 h-6 text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div>
+            <p class="text-red-300 font-medium">{{ errorMessage() }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <form (ngSubmit)="onViewStats()" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Sélection de la semaine -->
+          <div>
+            <label class="form-label">Semaine *</label>
+            <input 
+              type="text" 
+              [(ngModel)]="statsForm.semaine" 
+              name="semaine"
+              placeholder="Ex: semaine4, semaine47"
+              class="form-input"
+              [class.error]="statsForm.errors.semaine">
+            <div *ngIf="statsForm.errors.semaine" class="form-error">
+              {{ statsForm.errors.semaine }}
+            </div>
+          </div>
+
+          <!-- Sélection de la ligne -->
+          <div>
+            <label class="form-label">Ligne *</label>
+            <select 
+              [(ngModel)]="statsForm.ligne" 
+              name="ligne"
+              class="form-input"
+              [class.error]="statsForm.errors.ligne">
+              <option value="" disabled selected>Sélectionnez une ligne</option>
+              <option *ngFor="let line of lines()" [value]="line.ligne">
+                {{ line.ligne }}
+              </option>
+            </select>
+            <div *ngIf="statsForm.errors.ligne" class="form-error">
+              {{ statsForm.errors.ligne }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="flex gap-4">
+          <button 
+            type="button" 
+            (click)="onCancelStats()"
+            class="flex-1 py-4 rounded-xl font-semibold transition-all duration-300 bg-gray-600 hover:bg-gray-500 text-white">
+            Annuler
+          </button>
+          
+          <button 
+            type="submit" 
+            [disabled]="loadingStatsData() || !statsForm.semaine.trim() || !statsForm.ligne.trim()"
+            class="flex-1 submit-btn py-4 rounded-xl font-semibold transition-all duration-300 bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="flex items-center justify-center">
+              <span *ngIf="loadingStatsData()" class="loader-small mr-2"></span>
+              {{ loadingStatsData() ? 'Chargement...' : '📈 Générer les Graphiques' }}
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Section Graphiques -->
+    <div *ngIf="statsData()" class="space-y-8">
+      <!-- En-tête -->
+      <div class="creation-card bg-gradient-to-r from-purple-600/10 to-indigo-600/10 border border-purple-500/30">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="text-xl font-bold text-purple-400">
+              Statistiques pour {{ statsData().periode?.ligne }} - {{ statsData().periode?.semaine }}
+            </h3>
+            <div class="text-sm text-gray-400 mt-1">
+              Généré le {{ statsData().periode?.dateCalcul | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button 
+              (click)="exportCharts()"
+              class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Exporter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistiques résumées -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="stat-card bg-gradient-to-br from-blue-600/20 to-blue-800/20">
+          <div class="text-2xl font-bold text-blue-400">{{ statsData().resumeGeneral?.pcsProdTotal || 0 }}%</div>
+          <div class="text-blue-200 text-sm">PCS Prod Total</div>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-red-600/20 to-red-800/20">
+          <div class="text-2xl font-bold text-red-400">{{ statsData().resumeGeneral?.pourcentageTotalEcart || 0 }}%</div>
+          <div class="text-red-200 text-sm">% Écart Total</div>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-green-600/20 to-green-800/20">
+          <div class="text-2xl font-bold text-green-400">{{ statsData().resumeGeneral?.totalQteSource || 0 }}</div>
+          <div class="text-green-200 text-sm">Qté Source</div>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-yellow-600/20 to-yellow-800/20">
+          <div class="text-2xl font-bold text-yellow-400">{{ statsData().resumeGeneral?.totalDecProduction || 0 }}</div>
+          <div class="text-yellow-200 text-sm">Déc. Production</div>
+        </div>
+      </div>
+
+      <!-- Grille de graphiques -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Graphique 1: Quantités -->
+        <div class="creation-card">
+          <div class="h-80">
+            <canvas id="quantityChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Graphique 2: PCS Prod -->
+        <div class="creation-card">
+          <div class="h-80">
+            <canvas id="pcsChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Graphique 3: Répartition des écarts -->
+        <div class="creation-card">
+          <div class="h-80">
+            <canvas id="ecartPieChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Graphique 4: Écarts par jour -->
+        <div class="creation-card">
+          <div class="h-80">
+            <canvas id="ecartBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graphique 5: Comparaison (pleine largeur) -->
+      <div class="creation-card">
+        <div class="h-96">
+          <canvas id="comparisonChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Tableau de données -->
+      <div class="creation-card">
+        <h4 class="text-lg font-semibold text-cyan-400 mb-6">Détails des Données</h4>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-gray-700/50">
+                <th class="p-3 text-left text-gray-300">Jour</th>
+                <th class="p-3 text-left text-gray-300">Référence</th>
+                <th class="p-3 text-left text-gray-300">Qté Planifiée</th>
+                <th class="p-3 text-left text-gray-300">Qté Modifiée</th>
+                <th class="p-3 text-left text-gray-300">Déc. Prod</th>
+                <th class="p-3 text-left text-gray-300">PCS Prod</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let detail of statsData().details" 
+                  class="border-b border-gray-700/30 hover:bg-gray-700/20">
+                <td class="p-3 text-gray-300">{{ detail.jour }}</td>
+                <td class="p-3 text-gray-300">{{ detail.reference }}</td>
+                <td class="p-3 text-gray-300">{{ detail.qtePlanifiee }}</td>
+                <td class="p-3 text-gray-300">{{ detail.qteModifiee }}</td>
+                <td class="p-3 text-gray-300">{{ detail.decProduction }}</td>
+                <td class="p-3 text-gray-300">{{ detail.pcsProd }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message si pas de données -->
+    <div *ngIf="!statsData() && !loadingStatsData()" class="creation-card text-center py-12">
+      <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <h3 class="text-xl font-semibold text-gray-400 mb-2">Aucun graphique affiché</h3>
+      <p class="text-gray-500">Sélectionnez une semaine et une ligne pour générer les graphiques statistiques</p>
+    </div>
+  </div>
+</div>
 
   <!-- Message de succès -->
   <div *ngIf="showSuccess()" class="success-notification">

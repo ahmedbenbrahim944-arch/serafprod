@@ -5,14 +5,15 @@
 /* ==================== LAYOUT PRINCIPAL ==================== */
 .full-screen-layout {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: #f8fafc !important;
 }
 
 /* ==================== HEADER ==================== */
 .header-industrial {
-  background: rgba(15, 23, 42, 0.95);
-  border-bottom: 2px solid rgba(6, 182, 212, 0.5);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.98);
+  border-bottom: 1px solid #e2e8f0;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* ==================== BOUTON TOGGLE SIDEBAR ==================== */
@@ -20,24 +21,27 @@
   top: 50%;
   left: 0;
   transform: translateY(-50%);
-  padding: 0.75rem;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  padding: 0.5rem;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  background: #0ea5e9 !important;
+}
+
+.toggle-sidebar-btn:hover {
+  background: #0284c7 !important;
 }
 
 .toggle-sidebar-btn.sidebar-open {
-  left: 280px;
+  left: 220px;
 }
 
 /* ==================== SIDEBAR RESPONSIVE ==================== */
 .weeks-sidebar {
-  width: 280px;
-  background: rgba(15, 23, 42, 0.95);
-  border-right: 1px solid rgba(71, 85, 105, 0.3);
-  backdrop-filter: blur(10px);
+  width: 220px;
+  background: #ffffff !important;
+  border-right: 1px solid #e2e8f0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.03);
   transition: transform 0.3s ease;
-  position: relative;
-  z-index: 20;
 }
 
 /* Styles pour mobile/tablette */
@@ -48,7 +52,7 @@
     top: 0;
     height: 100%;
     z-index: 50;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   }
   
   .sidebar-hidden {
@@ -62,7 +66,7 @@
   .sidebar-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.3);
     z-index: 40;
     backdrop-filter: blur(2px);
   }
@@ -79,19 +83,49 @@
   }
 }
 
+/* ==================== WEEK ITEMS ==================== */
 .week-item {
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 6px;
+  margin: 4px 8px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
 }
 
 .week-item:hover {
-  background: rgba(51, 65, 85, 0.3);
-  border-left-color: rgba(6, 182, 212, 0.6);
+  background: #f1f5f9;
+  border-left-color: #0ea5e9;
+  transform: translateX(2px);
+  color: #0369a1;
 }
 
 .week-item.active {
-  background: rgba(6, 182, 212, 0.15);
-  border-left-color: rgb(6, 182, 212);
+  background: #0ea5e9;
+  border-left-color: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+  font-weight: 600;
+}
+
+/* Style spécifique pour les textes dans les items de semaine */
+.week-item .font-bold {
+  color: #1e293b !important;
+}
+
+.week-item .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+/* Quand l'item est actif */
+.week-item.active .font-bold {
+  color: #ffffff !important;
+}
+
+.week-item.active .text-gray-400 {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 /* ==================== CARTES DE LIGNES ==================== */
@@ -99,24 +133,25 @@
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  height: 450px;
-  background: rgba(30, 41, 59, 0.9);
-  border: 3px solid rgba(71, 85, 105, 0.4);
-  border-radius: 16px;
+  height: 500px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .line-card-large:hover {
-  transform: translateY(-8px);
-  border-color: rgba(6, 182, 212, 0.8);
-  box-shadow: 0 25px 50px rgba(6, 182, 212, 0.5);
+  transform: translateY(-2px);
+  border-color: #0ea5e9;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.12);
 }
 
 .image-container-large {
   height: 100%;
   position: relative;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .line-card-large img {
@@ -124,10 +159,11 @@
   height: 100%;
   width: 100%;
   object-fit: cover;
+  filter: brightness(0.96);
 }
 
 .line-card-large:hover img {
-  transform: scale(1.1);
+  transform: scale(1.04);
 }
 
 .line-overlay-large {
@@ -136,66 +172,64 @@
   left: 0;
   right: 0;
   background: linear-gradient(to top, 
-    rgba(15, 23, 42, 0.98) 0%, 
-    rgba(15, 23, 42, 0.85) 40%, 
+    rgba(255, 255, 255, 0.98) 0%, 
+    rgba(255, 255, 255, 0.88) 35%, 
     transparent 100%);
-  padding: 3rem 1.5rem 1.5rem 1.5rem;
+  padding: 1.25rem 1rem 1rem 1rem;
 }
 
 .line-name-large {
-  color: #e2e8f0;
-  font-weight: 700;
-  font-size: 2rem;
-  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.9);
-  letter-spacing: 1px;
+  color: #334155;
+  font-weight: 600;
+  font-size: 1.125rem;
+  letter-spacing: 0.3px;
 }
 
 .status-badge {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  padding: 10px 22px;
-  border-radius: 20px;
-  font-size: 1rem;
-  font-weight: 700;
+  top: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.688rem;
+  font-weight: 600;
   z-index: 10;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .status-badge-active {
   background: rgba(16, 185, 129, 0.95);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .status-badge-inactive {
   background: rgba(239, 68, 68, 0.95);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 /* ==================== SEARCH BAR ==================== */
 .search-container {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
 .search-container:focus-within {
-  border-color: rgba(6, 182, 212, 0.6);
-  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1);
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.08);
 }
 
 .search-input {
   background: transparent;
   border: none;
   outline: none;
-  color: #e2e8f0;
-  font-size: 1rem;
+  color: #334155;
+  font-size: 0.813rem;
   width: 100%;
 }
 
@@ -204,7 +238,7 @@
 }
 
 .search-icon {
-  color: #06b6d4;
+  color: #0ea5e9;
 }
 
 /* ==================== TABLEAU HEBDOMADAIRE ==================== */
@@ -212,199 +246,294 @@
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  background: rgba(15, 23, 42, 0.95);
-  font-size: 1.4rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
+  background: #ffffff !important;
+  font-size: 0.813rem !important;
+  border-radius: 8px;
   overflow: hidden;
+  border: 1px solid #e2e8f0;
 }
 
 .week-planning-table th {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
-  padding: 20px 16px;
-  font-weight: 700;
-  color: #e2e8f0;
-  border: 3px solid rgba(71, 85, 105, 0.7);
+  background: #f1f5f9 !important;
+  padding: 6px 8px !important;
+  font-weight: 100;
+  color: #334155;
+  border: 1px solid #e2e8f0 !important;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-size: 1.4rem;
+  letter-spacing: 0.3px;
+  font-size: 0.625rem !important;
   position: sticky;
   top: 0;
   z-index: 15;
   text-align: center;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  line-height: 0;
 }
 
 .week-planning-table td {
-  padding: 16px 12px;
-  border: 3px solid rgba(71, 85, 105, 0.5);
+  padding: 4px 6px !important;
+  border: none !important;
   vertical-align: middle;
-  min-width: 180px;
-  font-size: 1.2rem;
-  background: rgba(15, 23, 42, 0.7);
-  color: #e2e8f0;
+  min-width: 100px !important;
+  font-size: 0.813rem !important;
+  background: transparent !important;
+  color: #475569 !important;
   text-align: center;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+  height: 1px !important;
 }
 
-/* APRÈS - Colonnes réduites */
+/* Colonnes compactes */
 .week-planning-table td:nth-child(1) {
-  min-width: 80px !important;
-  max-width: 100px !important;
-  padding: 12px 8px !important;
-  font-size: 1.5rem !important;
+  min-width: 10px !important;
+  max-width: 20px !important;
+  padding: 0px 0px !important;
+  font-size: 0.75rem !important;
 }
 
-.week-planning-table td:nth-child(2) {
-  min-width: 60px !important;
-  max-width: 80px !important;
-  padding: 12px 6px !important;
-  font-size: 1.1rem !important;
+.week-planning-table td:nth-child(2),
+.week-planning-table td:nth-child(3),
+.week-planning-table td:nth-child(4),
+.week-planning-table td:nth-child(5),
+.week-planning-table td:nth-child(6),
+.week-planning-table td:nth-child(7) {
+  min-width: 10px !important;
+  max-width: 20px !important;
+  padding: 0px 0px !important;
+  font-size: 0.75rem !important;
 }
 
-.week-planning-table td:nth-child(3) {
-  min-width: 50px !important;
-  max-width: 60px !important;
-  padding: 12px 4px !important;
-  font-size: 1.2rem !important;
-}
-
+/* Effet hover sur les lignes - subtil */
 .week-planning-table tbody tr:hover td {
-  background: rgba(30, 41, 59, 0.9);
-  transform: scale(1.01);
-  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.1);
+  background: #f8fafc !important;
 }
 
-.week-planning-table tbody tr:nth-child(even) {
-  background: rgba(15, 23, 42, 0.8);
-}
-
+/* Pas d'alternance de couleur */
+.week-planning-table tbody tr:nth-child(even),
 .week-planning-table tbody tr:nth-child(odd) {
-  background: rgba(20, 30, 50, 0.8);
+  background: transparent !important;
 }
 
+/* Séparateur visuel léger entre les groupes de 5 lignes */
+.week-planning-table tbody tr:nth-child(5n) td {
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding-bottom: 6px !important;
+}
+
+.week-planning-table tbody tr:nth-child(5n+1) td {
+  padding-top: 0px !important;
+}
+
+/* Style pour les cellules sticky */
 .week-planning-table .sticky-cell {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  font-weight: 700;
-  font-size: 1.5rem;
-  color: #06b6d4;
+  background: #f8fafc !important;
+  font-weight: 600;
+  font-size: 0.75rem !important;
+  color: #0ea5e9 !important;
   position: sticky;
   left: 0;
   z-index: 10;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  border-right: 4px solid rgba(6, 182, 212, 0.5);
+  border-right: 1px solid #e2e8f0 !important;
+  padding: 3px 5px !important;
+  max-width: 80px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Style pour les inputs */
 .week-planning-table input {
-  font-size: 1.4rem !important;
-  font-weight: 600;
-  padding: 12px 16px !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 3px solid rgba(71, 85, 105, 0.7) !important;
-  border-radius: 8px;
-  color: #000000 !important;
+  font-size: 0.813rem !important;
+  font-weight: 500;
+  padding: 3px 5px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 4px;
+  color: #334155 !important;
   text-align: center;
   width: 100%;
-  transition: all 0.3s ease;
-  min-height: 60px;
-    overflow-x: auto;
-
+  transition: all 0.2s ease;
+  min-height: 28px !important;
 }
 
 .week-planning-table input:focus {
-  background: rgba(255, 255, 255, 1) !important;
-  border-color: rgba(6, 182, 212, 0.9) !important;
+  background: #ffffff !important;
+  border-color: #0ea5e9 !important;
   outline: none;
-  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.3);
-  transform: scale(1.02);
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
 }
 
+/* Style pour les valeurs affichées */
 .value-display {
-  font-size: 1.6rem;
-  font-weight: 700;
-  padding: 14px 0;
-  color: #e2e8f0;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-size: 0.813rem !important;
+  font-weight: 600;
+  padding: 3px 0 !important;
+  color: #475569 !important;
 }
 
+/* Style pour les pourcentages delta */
 .delta-value {
-  font-size: 1.6rem !important;
-  font-weight: 800 !important;
-  padding: 16px 0 !important;
-  letter-spacing: 0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  position: relative;
+  font-size: 0.813rem !important;
+  font-weight: 700 !important;
+  padding: 3px 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  background: #f8fafc;
 }
 
-.delta-value::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  width: 100%;
-  border-radius: 3px;
+/* Couleurs pour les deltas */
+.delta-excellent { 
+  color: #059669 !important; 
+  background: #d1fae5 !important;
+}
+.delta-good { 
+  color: #d97706 !important; 
+  background: #fef3c7 !important;
+}
+.delta-average { 
+  color: #ea580c !important; 
+  background: #ffedd5 !important;
+}
+.delta-poor { 
+  color: #dc2626 !important; 
+  background: #fee2e2 !important;
 }
 
-.delta-excellent::before { background: linear-gradient(to right, #10b981 70%, transparent 70%); }
-.delta-good::before { background: linear-gradient(to right, #f59e0b 50%, transparent 50%); }
-.delta-average::before { background: linear-gradient(to right, #f97316 30%, transparent 30%); }
-.delta-poor::before { background: linear-gradient(to right, #ef4444 20%, transparent 20%); }
-
-.delta-excellent { color: #10b981 !important; }
-.delta-good { color: #f59e0b !important; }
-.delta-average { color: #f97316 !important; }
-.delta-poor { color: #ef4444 !important; }
-
+/* Style pour les en-têtes de jours */
 .day-header {
-  font-size: 1.3rem !important;
-  font-weight: 700 !important;
-  padding: 28px 18px !important;
-  color: #06b6d4 !important;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-size: 0.625rem !important;
+  font-weight: 600 !important;
+  padding: 6px 4px !important;
+  color: #0ea5e9 !important;
+  background: #f1f5f9 !important;
+  line-height: 0.5;
 }
 
 .day-header .nb-operateurs {
-  font-size: 1.2rem;
-  margin-top: 8px;
+  font-size: 0.625rem;
+  margin-top: 2px;
   font-weight: 600;
-  color: #cbd5e1;
+  color: #64748b;
   display: block;
 }
 
-.day-header .person-icon-btn {
-  min-width: 36px;
-  height: 36px;
+.day-header .date-display {
+  font-size: 0.563rem;
+  margin-top: 1px;
+  font-weight: 500;
+  color: #94a3b8;
+  display: block;
+}
+
+/* Style pour les références */
+.reference-cell {
+  font-size: 0.813rem !important;
+  font-weight: 600 !important;
+  color: #0ea5e9 !important;
+  background: #f8fafc !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reference-cell:hover {
+  background: #e0f2fe !important;
+}
+
+/* Bordures simplifiées */
+.week-planning-table th {
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Colonne OF Verticale */
+.vertical-text-cell {
+  min-width: 35px !important;
+  max-width: 35px !important;
+  padding: 3px 2px !important;
+  position: relative;
+}
+
+.vertical-text-wrapper {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: rgba(6, 182, 212, 0.9);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-  cursor: pointer;
+  height: 100%;
+  gap: 3px;
 }
 
-.day-header .person-icon-btn:hover {
-  background: rgba(6, 182, 212, 1);
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.5);
+.vertical-text-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-weight: 600;
+  font-size: 0.625rem;
+  color: #0ea5e9;
+  text-orientation: mixed;
 }
 
-/* ==================== SCROLL HORIZONTAL AMÉLIORÉ ==================== */
+.vertical-text-input {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.813rem !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 3px;
+  padding: 3px 2px !important;
+  text-align: center;
+  width: 100%;
+  min-width: 25px;
+  height: auto;
+}
+
+.vertical-text-input:focus {
+  outline: none;
+  background: #ffffff !important;
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+}
+
+.vertical-text-value {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.813rem;
+  font-weight: 600;
+  color: #475569;
+  text-orientation: mixed;
+}
+
+/* ==================== SCROLLBAR ==================== */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 2px solid #f1f5f9;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==================== SCROLL HORIZONTAL ==================== */
 .table-responsive-container {
-  border-radius: 12px;
+  border-radius: 8px;
   position: relative;
-  background: rgba(15, 23, 42, 0.95);
+  background: #ffffff;
   overflow: hidden;
-    overflow-x: auto;
-
+  padding-bottom: 3px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .table-scroll-wrapper {
@@ -412,149 +541,288 @@
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(6, 182, 212, 0.6) rgba(30, 41, 59, 0.3);
+  scrollbar-color: #cbd5e1 #f1f5f9;
   position: relative;
-  cursor: grab;
-}
-
-.table-scroll-wrapper:active {
-  cursor: grabbing;
 }
 
 .table-scroll-wrapper::-webkit-scrollbar {
-  height: 14px;
-  background: rgba(30, 41, 59, 0.3);
+  height: 7px;
+  background: #f1f5f9;
 }
 
 .table-scroll-wrapper::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.3);
-  border-radius: 8px;
-  margin: 0 20px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  margin: 0 8px;
 }
 
 .table-scroll-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(6, 182, 212, 0.7);
-  border-radius: 8px;
-  border: 3px solid rgba(30, 41, 59, 0.3);
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 2px solid #f1f5f9;
   background-clip: padding-box;
 }
 
 .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(6, 182, 212, 0.9);
+  background: #94a3b8;
 }
 
 .planning-table-min-width {
-  min-width: 1200px;
+  min-width: 1000px;
 }
 
-.scroll-indicator {
-  display: none;
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(6, 182, 212, 0.95);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 25px;
-  font-size: 0.9rem;
+/* ==================== FORMULAIRE MULTI-OPÉRATEURS ==================== */
+.production-form-overlay {
+  backdrop-filter: blur(3px);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.production-form-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 90vh;
+}
+
+/* Header */
+.production-form-container > div:first-child {
+  background: #0ea5e9 !important;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+/* Sections du formulaire */
+.production-form-container > div:nth-child(2) {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Section gauche (opérateurs) */
+.production-form-container > div:nth-child(2) > div:first-child {
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  width: 25%;
+  overflow-y: auto;
+}
+
+/* Section centrale (saisie) */
+.production-form-container > div:nth-child(2) > div:nth-child(2) {
+  flex: 1;
+  overflow-y: auto;
+  background: #ffffff;
+}
+
+/* Section droite (enregistrements) */
+.production-form-container > div:nth-child(2) > div:last-child {
+  background: #f8fafc;
+  border-left: 1px solid #e2e8f0;
+  width: 33.333333%;
+  overflow-y: auto;
+}
+
+/* Tableau du formulaire */
+.production-form-container table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  background: #ffffff;
+}
+
+.production-form-container thead {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background: #ffffff !important;
+}
+
+.production-form-container thead th {
+  background: #f1f5f9 !important;
+  padding: 8px 12px !important;
+  color: #334155;
   font-weight: 600;
-  z-index: 100;
-  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
-  animation: pulse-indicator 2s infinite;
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-size: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+  text-transform: uppercase;
+}
+
+.production-form-container tbody tr {
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.production-form-container tbody tr:hover {
+  background: #f8fafc !important;
+}
+
+/* Inputs dans le formulaire */
+.production-form-container input[type="text"],
+.production-form-container input[type="number"],
+.production-form-container select {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155;
+  padding: 6px 8px;
+  font-size: 0.813rem;
+  width: 100%;
+}
+
+.production-form-container input[type="text"]:focus,
+.production-form-container input[type="number"]:focus,
+.production-form-container select:focus {
+  border-color: #0ea5e9;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+}
+
+.production-form-container option {
+  background: #ffffff;
+  color: #334155;
+  padding: 8px;
+}
+
+/* Boutons */
+.production-form-container button {
+  background: #0ea5e9;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.813rem;
+  transition: all 0.2s ease;
   cursor: pointer;
 }
 
-.scroll-indicator:hover {
-  background: rgba(6, 182, 212, 1);
+.production-form-container button:hover {
+  background: #0284c7;
 }
 
-@keyframes pulse-indicator {
-  0%, 100% { 
-    opacity: 1; 
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 0.8; 
-    transform: scale(1.05);
-  }
+/* Boutons d'action spécifiques */
+.btn-multi-save {
+  background: #10b981 !important;
 }
 
-/* Gradients de défilement */
-.table-responsive-container::before,
-.table-responsive-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 40px;
-  pointer-events: none;
-  z-index: 10;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+.btn-multi-save:hover {
+  background: #059669 !important;
 }
 
-.table-responsive-container::before {
-  left: 0;
-  background: linear-gradient(to right, rgba(15, 23, 42, 0.9), transparent);
+/* Cartes d'opérateurs */
+.selected-operator-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
 }
 
-.table-responsive-container::after {
-  right: 0;
-  background: linear-gradient(to left, rgba(15, 23, 42, 0.9), transparent);
+.selected-operator-card:hover {
+  border-color: #0ea5e9;
 }
 
-/* États de scroll */
-.scrollable::after {
-  opacity: 1;
+/* Checkboxes */
+.production-form-container input[type="checkbox"] {
+  accent-color: #0ea5e9;
+  width: 16px;
+  height: 16px;
 }
 
-.scrolled::before {
-  opacity: 1;
+/* Sections colorées */
+.bg-cyan-900\/20 {
+  background-color: rgba(14, 165, 233, 0.08) !important;
 }
 
-.scrolled-end::after {
-  opacity: 0;
+.border-cyan-700\/30 {
+  border-color: rgba(14, 165, 233, 0.3) !important;
 }
 
-.scrolled-start::before {
-  opacity: 0;
+/* ==================== MODAL 5M CAUSES ==================== */
+.causes-modal-overlay {
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.3s ease;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.85);
 }
 
-/* Support tactile amélioré */
-@media (pointer: coarse) {
-  .table-scroll-wrapper::-webkit-scrollbar {
-    height: 16px;
-  }
-  
-  .table-scroll-wrapper {
-    padding-bottom: 8px;
-  }
+.causes-modal-content {
+  animation: slideUp 0.3s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
-/* Afficher l'indicateur sur tablette/mobile */
-@media (max-width: 1024px) {
-  .scroll-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+/* Header modal */
+.causes-modal-content > div:first-child {
+  background: #0ea5e9;
+  border-radius: 12px 12px 0 0;
 }
 
-/* ==================== ANIMATIONS ==================== */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+/* Section formulaire 5M */
+.causes-modal-form-section {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
-.particle {
-  animation: float 3s ease-in-out infinite;
+/* Cartes 5M */
+.causes-modal-form-section > div {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* Inputs 5M */
+.causes-modal-content input[type="number"] {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.causes-modal-content input[type="number"]:focus {
+  border-color: #0ea5e9;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+}
+
+/* Boutons +/- */
+.causes-modal-content button {
+  background: #0ea5e9;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: white;
+}
+
+.causes-modal-content button:hover {
+  background: #0284c7;
+}
+
+/* Totaux et résumés */
+.bg-slate-900\/80 {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Alertes */
+.alert-warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  color: #92400e;
 }
 
 /* ==================== MESSAGE DE SUCCÈS ==================== */
@@ -566,16 +834,16 @@
 }
 
 .success-content {
-  background: rgba(16, 185, 129, 0.95);
+  background: #10b981;
   color: white;
-  padding: 16px 24px;
-  border-radius: 10px;
+  padding: 10px 18px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  font-size: 1.1rem;
-  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.813rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 /* ==================== LOADER ==================== */
@@ -585,7 +853,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -597,786 +865,175 @@
 }
 
 .industrial-loader {
-  width: 60px;
-  height: 60px;
-  border: 4px solid rgba(6, 182, 212, 0.3);
-  border-top: 4px solid #06b6d4;
+  width: 45px;
+  height: 45px;
+  border: 3px solid rgba(14, 165, 233, 0.15);
+  border-top: 3px solid #0ea5e9;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto;
 }
 
 /* ==================== RESPONSIVE DESIGN ==================== */
-@media (max-width: 1024px) {
-  .line-card-large { 
-    height: 350px; 
-  }
-  
+/* Desktop (1280px) */
+@media (max-width: 1280px) {
+  .line-card-large { height: 220px; }
+  .week-planning-table td { min-width: 90px; }
   .week-planning-table th,
   .week-planning-table td {
-    font-size: 1rem;
-    padding: 16px 12px;
+    font-size: 0.75rem;
+    padding: 4px 5px;
   }
   
-  .line-name-large {
-    font-size: 1.7rem;
-  }
-  
-  .planning-table-min-width {
-    min-width: 1100px;
-  }
-}
-
-@media (max-width: 768px) {
-  .line-card-large { 
-    height: 320px; 
-  }
-  
-  .week-planning-table { 
-    font-size: 0.9rem; 
-  }
-  
-  .week-planning-table th,
-  .week-planning-table td {
-    font-size: 0.9rem;
-    padding: 14px 10px;
-  }
-  
-  .line-name-large {
-    font-size: 1.4rem;
-  }
-  
-  .status-badge {
-    font-size: 0.8rem;
-    padding: 8px 16px;
-  }
-  
-  .value-display { 
-    font-size: 1.1rem; 
-  }
-  
-  .delta-value { 
-    font-size: 1.2rem !important; 
-  }
-  
-  .toggle-sidebar-btn.sidebar-open {
-    left: 280px;
-  }
-  
-  .planning-table-min-width {
-    min-width: 1000px;
-  }
-  
-  .scroll-indicator {
-    bottom: 15px;
-    right: 15px;
-    padding: 10px 16px;
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .week-planning-table {
-    font-size: 0.8rem;
-  }
-  
-  .week-planning-table th,
-  .week-planning-table td {
-    padding: 12px 8px;
-    font-size: 0.85rem;
-  }
-  
-  .value-display {
-    font-size: 1rem;
-  }
-  
-  .delta-value {
-    font-size: 1.1rem !important;
-  }
-  
-  .week-planning-table input {
-    font-size: 1rem !important;
-    padding: 8px !important;
-    min-height: 40px;
-  }
-  
-  .line-card-large { 
-    height: 280px; 
-  }
-}
-
-@media (max-width: 480px) {
-  .line-card-large { 
-    height: 250px; 
-  }
-  
-  .line-name-large { 
-    font-size: 1.2rem; 
-  }
-  
-  .line-overlay-large { 
-    padding: 2rem 1rem 1rem 1rem; 
-  }
-  
-  .week-planning-table th,
-  .week-planning-table td {
-    padding: 10px 6px;
-    font-size: 0.8rem;
-  }
-  
-  .week-planning-table input {
-    font-size: 0.9rem !important;
-    padding: 6px !important;
-    min-height: 35px;
-  }
-  
-  .success-content {
-    padding: 12px 16px;
-    font-size: 1rem;
-  }
-  
-  .day-header .person-icon-btn {
-    min-width: 32px;
-    height: 32px;
-  }
-}
-/* ==================== COLONNE OF VERTICALE ==================== */
-.vertical-text-cell {
-  min-width: 50px !important;
-  max-width: 50px !important;
-  padding: 10px 5px !important;
-  position: relative;
-}
-
-.vertical-text-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 8px;
-}
-
-.vertical-text-label {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-weight: 900;
-  font-size: 0.9rem;
-  color: #06b6d4;
-  letter-spacing: 1px;
-  text-orientation: mixed;
-}
-
-.vertical-text-input {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 1.2rem !important;
-  font-weight: 700 !important;
-  color: #000000 !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 2px solid #06b6d4 !important;
-  border-radius: 4px;
-  padding: 8px 4px !important;
-  text-align: center;
-  width: 100%;
-  min-width: 40px;
-  height: auto;
-}
-
-.vertical-text-input:focus {
-  outline: none;
-  background: rgba(255, 255, 255, 1) !important;
-  border-color: #06b6d4 !important;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3);
-}
-
-.vertical-text-value {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 1.4rem;
-  font-weight: 900;
-  color: #ffffff;
-  text-orientation: mixed;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 0.5px;
-  display: block;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .vertical-text-cell {
-    min-width: 45px !important;
-    max-width: 45px !important;
-    padding: 8px 4px !important;
-  }
-  
-  .vertical-text-value {
-    font-size: 1.2rem;
-  }
-  
-  .vertical-text-input {
-    font-size: 1rem !important;
-  }
-}
-/* ==================== FORMULAIRE MULTI-OPÉRATEURS ==================== */
-.production-form-overlay {
-  backdrop-filter: blur(5px);
-  overflow-x: auto;
-}
-
-/* ==================== CORRECTIONS FORMULAIRE MULTI-OPÉRATEURS ==================== */
-
-/* Correction du conteneur principal */
-.production-form-container {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
-  border: 2px solid rgba(6, 182, 212, 0.3);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden !important;
-  height: 90vh;
-}
-
-/* Header sticky en haut */
-.production-form-container > div:first-child {
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #0891b2 !important;
-}
-
-/* Conteneur flex pour les sections */
-.production-form-container > div:nth-child(2) {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-}
-
-/* Section de sélection des opérateurs */
-.production-form-container > div:nth-child(2) > div:first-child {
-  flex-shrink: 0;
-  width: 25%;
-  overflow-y: auto;
-}
-
-/* Section de saisie principale */
-.production-form-container > div:nth-child(2) > div:nth-child(2) {
-  flex: 1;
-  overflow-y: auto;
-  position: relative;
-}
-
-/* Correction du tableau */
-.production-form-container table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.production-form-container thead {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 10 !important;
-  background: #0f172a !important;
-}
-
-.production-form-container thead th {
-  position: sticky !important;
-  top: 0 !important;
-  background: #0f172a !important;
-  padding: 12px 8px !important;
-  border-bottom: 2px solid #06b6d4 !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.production-form-container tbody tr {
-  background: rgba(15, 23, 42, 0.5) !important;
-}
-
-.production-form-container tbody tr:hover {
-  background: rgba(30, 41, 59, 0.8) !important;
-}
-
-/* Panneau des enregistrements */
-.production-form-container > div:nth-child(2) > div:last-child {
-  flex-shrink: 0;
-  width: 33.333333%;
-  overflow-y: auto;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
   .production-form-container {
     max-width: 95vw;
-    max-height: 95vh;
   }
+}
+
+/* Tablettes paysage (1024px) */
+@media (max-width: 1024px) {
+  .line-card-large { height: 200px; }
+  .weeks-sidebar { width: 190px; }
+  .week-planning-table th,
+  .week-planning-table td {
+    font-size: 0.688rem;
+    padding: 3px 4px;
+  }
+  .line-name-large { font-size: 1rem; }
   
   .production-form-container > div:nth-child(2) {
     flex-direction: column;
-    overflow-y: auto;
   }
   
   .production-form-container > div:nth-child(2) > div {
     width: 100% !important;
     border-right: none !important;
     border-left: none !important;
-    border-bottom: 1px solid rgba(71, 85, 105, 0.4);
-  }
-  
-  .production-form-container thead th {
-    padding: 10px 6px !important;
-    font-size: 0.85rem !important;
+    border-bottom: 1px solid #e2e8f0;
   }
 }
 
+/* Tablettes portrait (768px) */
 @media (max-width: 768px) {
+  .weeks-sidebar { width: 170px; }
+  .line-card-large { height: 180px; }
+  .week-planning-table th,
+  .week-planning-table td {
+    font-size: 0.688rem;
+    padding: 3px 4px;
+    height: 28px !important;
+  }
+  .line-name-large { font-size: 0.938rem; }
+  
+  .toggle-sidebar-btn.sidebar-open {
+    left: 170px;
+  }
+  
   .production-form-container {
     max-height: 95vh;
     padding: 0;
   }
   
-  .production-form-container > div:first-child {
-    padding: 12px 16px;
+  .production-form-container > div:first-child h2 {
+    font-size: 1.1rem !important;
   }
   
-  .production-form-container > div:first-child h2 {
-    font-size: 1.25rem !important;
+  .causes-modal-content {
+    max-width: 95vw;
+  }
+}
+
+/* Mobiles (640px) */
+@media (max-width: 640px) {
+  .week-planning-table {
+    font-size: 0.625rem;
+  }
+  
+  .week-planning-table th,
+  .week-planning-table td {
+    padding: 2px 3px;
+    font-size: 0.625rem;
+    height: 24px !important;
+  }
+  
+  .week-planning-table input {
+    font-size: 0.625rem !important;
+    padding: 2px 3px !important;
+    min-height: 22px !important;
+  }
+  
+  .line-card-large { 
+    height: 160px; 
   }
   
   .production-form-container table {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
   
   .production-form-container thead th {
-    padding: 8px 4px !important;
-    font-size: 0.75rem !important;
+    padding: 6px 8px !important;
+    font-size: 0.688rem !important;
   }
   
-  .production-form-container select,
-  .production-form-container input[type="number"] {
-    padding: 8px 10px !important;
-    font-size: 0.85rem !important;
-  }
-}
-
-/* Section opérateurs */
-.operator-selection-item {
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-}
-
-.operator-selection-item:hover {
-  border-color: rgba(6, 182, 212, 0.5);
-}
-
-.operator-selection-item.selected {
-  border-color: rgba(6, 182, 212, 0.8);
-  background: rgba(6, 182, 212, 0.1);
-}
-
-/* Formulaire par opérateur */
-.operator-form-section {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  transition: all 0.3s ease;
-}
-
-.operator-form-section:hover {
-  border-color: rgba(6, 182, 212, 0.5);
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
-}
-
-/* Boutons */
-.btn-multi-save {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  transition: all 0.3s ease;
-}
-
-.btn-multi-save:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-}
-
-/* Scrollbars personnalisées */
-.operator-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.operator-list::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.3);
-  border-radius: 3px;
-}
-
-.operator-list::-webkit-scrollbar-thumb {
-  background: rgba(6, 182, 212, 0.6);
-  border-radius: 3px;
-}
-
-.operator-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(6, 182, 212, 0.8);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .production-form-container {
-    max-width: 95vw;
-  }
-  
-  .production-form-container > div {
-    flex-direction: column;
-  }
-  
-  .production-form-container > div > div {
-    width: 100% !important;
-    border-right: none !important;
-    border-left: none !important;
-    border-bottom: 1px solid rgba(71, 85, 105, 0.4);
-  }
-}
-
-@media (max-width: 768px) {
-  .production-form-container {
+  .causes-modal-content {
     max-height: 95vh;
   }
   
-  .operator-form-section {
-    padding: 1rem;
+  .causes-modal-form-section {
+    max-height: 300px;
+  }
+}
+
+/* Petits mobiles (480px) */
+@media (max-width: 480px) {
+  .line-card-large { height: 160px; }
+  .line-name-large { font-size: 0.813rem; }
+  
+  .week-planning-table th,
+  .week-planning-table td {
+    padding: 2px 2px;
+    font-size: 0.563rem;
+    height: 22px !important;
   }
   
-  .grid-cols-3 {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-}
-/* ==================== CORRECTIONS AFFICHAGE FORMULAIRE ==================== */
-
-/* Correction pour l'affichage des sélecteurs de phase */
-select {
-  background: rgba(30, 41, 59, 0.9) !important;
-  border: 2px solid rgba(6, 182, 212, 0.5) !important;
-  border-radius: 8px !important;
-  color: #e2e8f0 !important;
-  padding: 12px 16px !important;
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  width: 100% !important;
-  appearance: menulist !important;
-  -webkit-appearance: menulist !important;
-  -moz-appearance: menulist !important;
-}
-
-select:focus {
-  border-color: rgba(6, 182, 212, 0.9) !important;
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3) !important;
-}
-
-select option {
-  background: #1e293b !important;
-  color: #e2e8f0 !important;
-  padding: 12px !important;
-  font-size: 1rem !important;
-}
-
-/* Correction pour l'affichage des champs de formulaire */
-.production-form-container input[type="text"],
-.production-form-container input[type="number"] {
-  background: rgba(30, 41, 59, 0.9) !important;
-  border: 2px solid rgba(6, 182, 212, 0.5) !important;
-  border-radius: 8px !important;
-  color: #e2e8f0 !important;
-  padding: 12px 16px !important;
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  width: 100% !important;
-}
-
-.production-form-container input[type="text"]:focus,
-.production-form-container input[type="number"]:focus {
-  border-color: rgba(6, 182, 212, 0.9) !important;
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3) !important;
-}
-
-/* Correction pour l'affichage des labels */
-.production-form-container label {
-  color: #06b6d4 !important;
-  font-weight: 700 !important;
-  font-size: 0.9rem !important;
-  margin-bottom: 8px !important;
-  display: block !important;
-}
-
-/* Correction pour l'affichage des cartes d'opérateurs */
-.operator-form-section {
-  background: rgba(15, 23, 42, 0.8) !important;
-  border: 2px solid rgba(71, 85, 105, 0.4) !important;
-  border-radius: 12px !important;
-  padding: 20px !important;
-  margin-bottom: 16px !important;
-}
-
-.operator-form-section:hover {
-  border-color: rgba(6, 182, 212, 0.5) !important;
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1) !important;
-}
-
-/* Correction pour l'affichage des boutons */
-.production-form-container button {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
-  border: none !important;
-  border-radius: 8px !important;
-  color: white !important;
-  font-weight: 700 !important;
-  padding: 12px 24px !important;
-  font-size: 0.9rem !important;
-  transition: all 0.3s ease !important;
-  cursor: pointer !important;
-}
-
-.production-form-container button:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4) !important;
-}
-
-/* Styles spécifiques pour les boutons d'action */
-.btn-add-phase {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-}
-
-.btn-remove-phase {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-  padding: 8px 12px !important;
-}
-
-/* Correction pour l'affichage des heures */
-.total-heures-display {
-  font-size: 1.5rem !important;
-  font-weight: 900 !important;
-  color: #10b981 !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* Correction pour la grille des phases */
-.phases-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
-  gap: 12px !important;
-  margin-top: 16px !important;
-}
-
-.phase-item {
-  background: rgba(30, 41, 59, 0.9) !important;
-  border: 2px solid rgba(6, 182, 212, 0.3) !important;
-  border-radius: 8px !important;
-  padding: 16px !important;
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-}
-
-.phase-info {
-  flex: 1 !important;
-}
-
-.phase-name {
-  color: #e2e8f0 !important;
-  font-weight: 700 !important;
-  font-size: 1.1rem !important;
-}
-
-.phase-hours {
-  color: #10b981 !important;
-  font-weight: 800 !important;
-  font-size: 1.2rem !important;
-}
-
-/* Correction pour l'affichage des onglets */
-.tabs-container {
-  display: flex !important;
-  gap: 8px !important;
-  margin-bottom: 20px !important;
-}
-
-.tab-button {
-  flex: 1 !important;
-  background: rgba(30, 41, 59, 0.8) !important;
-  border: 2px solid rgba(71, 85, 105, 0.4) !important;
-  border-radius: 8px !important;
-  padding: 16px !important;
-  color: #94a3b8 !important;
-  font-weight: 700 !important;
-  font-size: 1rem !important;
-  text-align: center !important;
-  transition: all 0.3s ease !important;
-  cursor: pointer !important;
-}
-
-.tab-button.active {
-  background: rgba(6, 182, 212, 0.2) !important;
-  border-color: rgba(6, 182, 212, 0.8) !important;
-  color: #06b6d4 !important;
-}
-
-.tab-button:hover:not(.active) {
-  border-color: rgba(6, 182, 212, 0.5) !important;
-  color: #e2e8f0 !important;
-}
-
-/* Correction pour l'affichage des opérateurs sélectionnés */
-.selected-operator-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%) !important;
-  border: 2px solid rgba(6, 182, 212, 0.4) !important;
-  border-radius: 12px !important;
-  padding: 20px !important;
-  margin-bottom: 16px !important;
-  transition: all 0.3s ease !important;
-}
-
-.selected-operator-card:hover {
-  border-color: rgba(6, 182, 212, 0.8) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.2) !important;
-}
-
-.operator-header {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  margin-bottom: 16px !important;
-  padding-bottom: 12px !important;
-  border-bottom: 2px solid rgba(71, 85, 105, 0.3) !important;
-}
-
-.operator-name {
-  color: #06b6d4 !important;
-  font-weight: 800 !important;
-  font-size: 1.2rem !important;
-}
-
-.operator-hours {
-  color: #10b981 !important;
-  font-weight: 900 !important;
-  font-size: 1.3rem !important;
-}
-
-/* Correction pour la grille des champs de formulaire */
-.form-grid {
-  display: grid !important;
-  grid-template-columns: 2fr 1fr auto !important;
-  gap: 12px !important;
-  align-items: end !important;
-  margin-bottom: 16px !important;
-}
-
-/* Correction pour l'affichage responsive */
-@media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr !important;
-    gap: 8px !important;
+  .week-planning-table input {
+    font-size: 0.563rem !important;
+    padding: 1px 2px !important;
+    min-height: 20px !important;
   }
   
-  .phases-grid {
-    grid-template-columns: 1fr !important;
+  .production-form-container button {
+    padding: 6px 12px;
+    font-size: 0.75rem;
   }
   
-  .selected-operator-card {
-    padding: 16px !important;
+  .success-content {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Support tactile */
+@media (pointer: coarse) {
+  .week-planning-table input {
+    min-height: 32px !important;
   }
   
-  .operator-header {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 8px !important;
-  }
-  
-  .production-form-container input[type="text"],
-  .production-form-container input[type="number"],
-  select {
-    padding: 10px 12px !important;
-    font-size: 0.9rem !important;
+  .production-form-container input,
+  .production-form-container select {
+    padding: 10px !important;
   }
 }
 
-/* Correction pour l'affichage des messages d'état */
-.no-operators-message {
-  text-align: center !important;
-  padding: 60px 20px !important;
-  color: #64748b !important;
-}
-
-.no-operators-message svg {
-  margin-bottom: 16px !important;
-  opacity: 0.5 !important;
-}
-
-/* Correction pour l'affichage des en-têtes */
-.section-header {
-  color: #06b6d4 !important;
-  font-weight: 800 !important;
-  font-size: 1.3rem !important;
-  margin-bottom: 20px !important;
-  text-align: center !important;
-  text-transform: uppercase !important;
-  letter-spacing: 1px !important;
-}
-
-/* Correction pour l'affichage des bordures */
-.border-cyan-500 {
-  border-color: #06b6d4 !important;
-}
-
-.border-slate-600 {
-  border-color: #475569 !important;
-}
-
-/* Correction pour l'affichage des arrière-plans */
-.bg-slate-800 {
-  background-color: #1e293b !important;
-}
-
-.bg-slate-900 {
-  background-color: #0f172a !important;
-}
-
-.bg-cyan-600 {
-  background-color: #0891b2 !important;
-}
-/* Ajoutez ces styles dans prod2.component.css */
-
-/* ==================== MODAL 5M CAUSES ==================== */
-/* ==================== MODAL 5M CAUSES - AVEC SCROLL ==================== */
-
-/* Overlay de la modal */
-.causes-modal-overlay {
-  backdrop-filter: blur(8px);
-  animation: fadeIn 0.3s ease;
-  overflow-y: auto !important; /* ← AJOUT pour permettre le scroll */
-  padding: 20px; /* Espacement autour de la modal */
-}
-
+/* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Conteneur principal de la modal avec scroll */
-.causes-modal-content {
-  animation: slideUp 0.3s ease;
-  max-height: 90vh !important; /* ← AJOUT: limite la hauteur à 90% de l'écran */
-  overflow-y: auto !important; /* ← AJOUT: active le scroll vertical */
-  display: flex !important;
-  flex-direction: column !important;
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
   from {
-    transform: translateY(30px);
+    transform: translateY(15px);
     opacity: 0;
   }
   to {
@@ -1385,222 +1042,57 @@ select option {
   }
 }
 
-/* Section scrollable du formulaire 5M */
-.causes-modal-form-section {
-  max-height: 400px !important; /* ← hauteur max pour la section des 5M */
-  overflow-y: auto !important; /* ← scroll dans la section des formulaires */
-  padding-right: 8px; /* espace pour la scrollbar */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* Style pour les boutons Delta cliquables */
-.delta-value {
-  position: relative;
-  transition: all 0.3s ease;
+/* Override pour le background des particules */
+.full-screen-layout .absolute.inset-0 {
+  opacity: 0.02 !important;
 }
 
-.delta-value:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+/* Tooltip */
+.tooltip-text {
+  z-index: 50;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: #334155;
+  color: white;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-.delta-value:active {
-  transform: scale(0.95);
-}
-
-/* Animation pour l'indicateur de causes enregistrées */
+/* Animation du point vert */
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Styles pour les inputs de causes */
-.causes-modal-content input[type="number"] {
-  appearance: textfield;
-  -moz-appearance: textfield;
+/* Indicateur de scroll */
+.scroll-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #0ea5e9;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  cursor: pointer;
+  display: none;
 }
 
-.causes-modal-content input[type="number"]::-webkit-inner-spin-button,
-.causes-modal-content input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.causes-modal-content input[type="number"]:focus {
-  transform: scale(1.02);
-}
-
-/* Styles pour les boutons + et - */
-.causes-modal-content button svg {
-  transition: transform 0.2s ease;
-}
-
-.causes-modal-content button:hover svg {
-  transform: scale(1.2);
-}
-
-.causes-modal-content button:active {
-  transform: scale(0.95);
-}
-
-/* Style pour l'alerte de différence */
-.alert-warning {
-  animation: shake 0.5s ease;
-}
-
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  75% {
-    transform: translateX(5px);
-  }
-}
-
-/* Scrollbar personnalisée pour la modal */
-.causes-modal-content::-webkit-scrollbar,
-.causes-modal-form-section::-webkit-scrollbar {
-  width: 8px;
-}
-
-.causes-modal-content::-webkit-scrollbar-track,
-.causes-modal-form-section::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.3);
-  border-radius: 4px;
-}
-
-.causes-modal-content::-webkit-scrollbar-thumb,
-.causes-modal-form-section::-webkit-scrollbar-thumb {
-  background: rgba(6, 182, 212, 0.6);
-  border-radius: 4px;
-}
-
-.causes-modal-content::-webkit-scrollbar-thumb:hover,
-.causes-modal-form-section::-webkit-scrollbar-thumb:hover {
-  background: rgba(6, 182, 212, 0.8);
-}
-
-/* Responsive pour mobile */
 @media (max-width: 768px) {
-  .causes-modal-content {
-    max-height: 95vh !important; /* Plus de hauteur sur mobile */
-  }
-  
-  .causes-modal-form-section {
-    max-height: 300px !important; /* Section plus petite sur mobile */
-  }
-  
-  .delta-value {
-    font-size: 1rem !important;
-    padding: 6px !important;
-  }
-  
-  .causes-modal-overlay {
-    padding: 10px; /* Moins de padding sur mobile */
-  }
-}
-
-@media (max-width: 640px) {
-  .causes-modal-content input[type="number"] {
-    font-size: 1.2rem !important;
-    padding: 10px !important;
-  }
-  
-  .causes-modal-content button {
-    padding: 8px !important;
-  }
-  
-  .causes-modal-content {
-    max-height: 98vh !important; /* Presque plein écran sur petit mobile */
-  }
-}
-
-/* Correction pour éviter que le contenu sorte de la modal */
-.causes-modal-wrapper {
-  max-width: 48rem; /* max-w-3xl */
-  margin: 0 auto;
-  position: relative;
-}
-/* Ajouter ces styles dans prod2.component.css */
-
-/* Badge NB OP dans le header */
-.day-header .bg-cyan-600 {
-  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
-  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
-  transition: all 0.3s ease;
-}
-
-.day-header .bg-cyan-600:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.5);
-}
-
-/* Nombre d'opérateurs affiché */
-.day-header .text-white.font-bold {
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  animation: fadeIn 0.5s ease-in;
-}
-
-/* Animation de fondu */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Style pour le badge quand le nombre est élevé */
-.nb-op-high {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  font-weight: bold;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
-  display: inline-block;
-}
-
-/* Style pour le badge quand le nombre est moyen */
-.nb-op-medium {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
-  font-weight: bold;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
-  display: inline-block;
-}
-
-/* Style pour le badge quand le nombre est faible */
-.nb-op-low {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  font-weight: bold;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
-  display: inline-block;
-}
-
-/* Responsive pour mobile */
-@media (max-width: 640px) {
-  .day-header .bg-cyan-600 {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-  }
-  
-  .day-header .text-white.font-bold {
-    font-size: 0.875rem;
+  .scroll-indicator {
+    display: flex;
+    align-items: center;
   }
 }

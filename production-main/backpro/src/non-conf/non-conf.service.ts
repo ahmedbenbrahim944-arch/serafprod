@@ -21,6 +21,14 @@ export class NonConfService {
     return planification.qteModifiee > 0 ? planification.qteModifiee : planification.qtePlanifiee;
   }
 
+  // ✅ AJOUT : Méthode pour calculer le pourcentage d'écart
+  private calculerEcartPourcentage(total5M: number, quantiteSource: number): number {
+    if (quantiteSource <= 0) return 0;
+    const pourcentage = (total5M / quantiteSource) * 100;
+    // Format : une décimale (25.0)
+    return Math.round(pourcentage * 10) / 10;
+  }
+
   // ✅ MODIFIÉ : Suppression du paramètre user
   async createOrUpdateNonConformite(createOrUpdateNonConfDto: CreateOrUpdateNonConfDto) {
     const { semaine, jour, ligne, reference, referenceMatierePremiere } = createOrUpdateNonConfDto;
@@ -98,6 +106,10 @@ export class NonConfService {
         );
       }
 
+      // ✅ AJOUT : Calculer le pourcentage d'écart
+      const ecartPourcentage = this.calculerEcartPourcentage(total5M, quantiteSource);
+      console.log('Pourcentage d\'écart calculé:', ecartPourcentage + '%');
+
       // 7. Vérifier si un rapport existe déjà
       const existingNonConf = await this.nonConfRepository.findOne({
         where: { planification: { id: planification.id } },
@@ -122,7 +134,8 @@ export class NonConfService {
               reference,
               quantiteSource,
               decProduction: planification.decProduction,
-              deltaProd 
+              deltaProd,
+              ecartPourcentage: 0 // ✅ AJOUT : Pourcentage à 0 lors de la suppression
             }
           };
         } else {
@@ -150,6 +163,8 @@ export class NonConfService {
       nonConf.maintenance = maintenance;
       nonConf.qualite = qualite;
       nonConf.total = total5M;
+      // ✅ AJOUT : Sauvegarde du pourcentage dans l'entité
+      nonConf.ecartPourcentage = ecartPourcentage;
       
       // 11. Gestion de la référence matière première
       if (matierePremiere > 0 && referenceMatierePremiere && referenceMatierePremiere.trim() !== '') {
@@ -176,7 +191,8 @@ export class NonConfService {
         rendement: nonConf.rendement,
         maintenance: nonConf.maintenance,
         qualite: nonConf.qualite,
-        total: nonConf.total
+        total: nonConf.total,
+        ecartPourcentage: nonConf.ecartPourcentage // ✅ AJOUT : Log du pourcentage
       });
 
       // 13. Sauvegarder
@@ -199,6 +215,7 @@ export class NonConfService {
           decProduction: planification.decProduction,
           deltaProd,
           total5M: savedNonConf.total,
+          ecartPourcentage: savedNonConf.ecartPourcentage, // ✅ AJOUT : Pourcentage dans la réponse
           details: {
             matierePremiere: savedNonConf.matierePremiere,
             referenceMatierePremiere: savedNonConf.referenceMatierePremiere,
@@ -265,6 +282,11 @@ export class NonConfService {
       const plan = nonConf.planification;
       const quantiteSource = this.getQuantitySource(plan);
       
+      // ✅ AJOUT : Vérification si le pourcentage est déjà calculé en base
+      const ecartPourcentage = nonConf.ecartPourcentage > 0 
+        ? nonConf.ecartPourcentage 
+        : this.calculerEcartPourcentage(nonConf.total, quantiteSource);
+      
       return {
         id: nonConf.id,
         semaine: plan.semaine,
@@ -277,6 +299,7 @@ export class NonConfService {
         deltaProd: plan.deltaProd,
         pcsProd: `${plan.pcsProd}%`,
         total5M: nonConf.total,
+        ecartPourcentage, // ✅ AJOUT : Pourcentage dans la réponse
         details: {
           matierePremiere: nonConf.matierePremiere,
           referenceMatierePremiere: nonConf.referenceMatierePremiere,
@@ -298,7 +321,11 @@ export class NonConfService {
       rendement: formattedResults.reduce((sum, item) => sum + item.details.rendement, 0),
       maintenance: formattedResults.reduce((sum, item) => sum + item.details.maintenance, 0),
       qualite: formattedResults.reduce((sum, item) => sum + item.details.qualite, 0),
-      total5M: formattedResults.reduce((sum, item) => sum + item.total5M, 0)
+      total5M: formattedResults.reduce((sum, item) => sum + item.total5M, 0),
+      // ✅ AJOUT : Total des pourcentages (moyenne)
+      moyenneEcartPourcentage: formattedResults.length > 0 
+        ? Math.round((formattedResults.reduce((sum, item) => sum + item.ecartPourcentage, 0) / formattedResults.length) * 10) / 10
+        : 0
     };
 
     return {
@@ -336,6 +363,7 @@ export class NonConfService {
       deltaProd: planification.deltaProd,
       pcsProd: `${planification.pcsProd}%`,
       total5M: nonConf.total,
+      ecartPourcentage: nonConf.ecartPourcentage, // ✅ AJOUT : Pourcentage dans la réponse
       details: {
         matierePremiere: nonConf.matierePremiere,
         referenceMatierePremiere: nonConf.referenceMatierePremiere,
@@ -380,7 +408,8 @@ export class NonConfService {
           quantiteSource,
           decProduction: planification.decProduction,
           deltaProd: planification.deltaProd,
-          pcsProd: `${planification.pcsProd}%`
+          pcsProd: `${planification.pcsProd}%`,
+          ecartPourcentage: 0 // ✅ AJOUT : Pourcentage à 0 quand pas de rapport
         }
       };
     }
@@ -400,6 +429,7 @@ export class NonConfService {
         deltaProd: planification.deltaProd,
         pcsProd: `${planification.pcsProd}%`,
         total5M: nonConf.total,
+        ecartPourcentage: nonConf.ecartPourcentage, // ✅ AJOUT : Pourcentage dans la réponse
         details: {
           matierePremiere: nonConf.matierePremiere,
           referenceMatierePremiere: nonConf.referenceMatierePremiere,
@@ -491,16 +521,144 @@ export class NonConfService {
       .select('planification.semaine', 'semaine')
       .addSelect('COUNT(nonConf.id)', 'nombreRapports')
       .addSelect('SUM(nonConf.total)', 'totalQuantite')
+      .addSelect('AVG(nonConf.ecartPourcentage)', 'moyenneEcartPourcentage') // ✅ AJOUT : Moyenne des pourcentages
       .groupBy('planification.semaine')
       .orderBy('planification.semaine', 'DESC')
       .getRawMany();
+
+    // ✅ AJOUT : Calcul de la moyenne globale des pourcentages
+    const moyenneGlobaleEcart = nonConfs.length > 0
+      ? Math.round((nonConfs.reduce((sum, nc) => sum + nc.ecartPourcentage, 0) / nonConfs.length) * 10) / 10
+      : 0;
 
     return {
       message: 'Statistiques des non-conformités',
       periode: semaine || 'Toutes semaines',
       totalRapports: total,
       statsParCause,
-      rapportsParSemaine
+      rapportsParSemaine,
+      moyenneEcartPourcentage: moyenneGlobaleEcart // ✅ AJOUT : Moyenne globale
     };
   }
+  // src/non-conf/non-conf.service.ts - Partie corrigée
+
+// Correction de la méthode getTotalEcartPourcentage
+async getTotalEcartPourcentage(semaine: string, ligne: string, reference: string) {
+  try {
+    console.log('=== DÉBUT getTotalEcartPourcentage ===');
+    console.log('Paramètres:', { semaine, ligne, reference });
+
+    // 1. Récupérer toutes les planifications pour cette combinaison (semaine, ligne, référence)
+    const planifications = await this.planificationRepository.find({
+      where: { semaine, ligne, reference },
+      relations: ['nonConformites']
+    });
+
+    if (!planifications || planifications.length === 0) {
+      console.log('Aucune planification trouvée');
+      return {
+        message: 'Aucune planification trouvée pour cette combinaison',
+        semaine,
+        ligne,
+        reference,
+        totalEcart: 0,
+        totalQuantite: 0,
+        pourcentageTotal: 0,
+        details: []
+      };
+    }
+
+    console.log(`Nombre de planifications trouvées: ${planifications.length}`);
+
+    // 2. Calculer les totaux jour par jour
+    const details = planifications.map(planification => {
+      // Quantité source
+      const quantiteSource = planification.qteModifiee > 0 
+        ? planification.qteModifiee 
+        : planification.qtePlanifiee;
+      
+      // Écart (total5M) si non-conformité existe
+      let ecart = 0;
+      let nonConfId: number | null = null; // ✅ CORRECTION : type number | null
+      
+      if (planification.nonConformites && planification.nonConformites.length > 0) {
+        // Prendre la première non-conformité (normalement une seule par planification)
+        const nonConf = planification.nonConformites[0];
+        ecart = nonConf.total;
+        nonConfId = nonConf.id;
+      }
+      
+      // Pourcentage pour ce jour
+      const pourcentageJour = quantiteSource > 0 
+        ? Math.round((ecart / quantiteSource) * 100 * 10) / 10 
+        : 0;
+
+      return {
+        jour: planification.jour,
+        planificationId: planification.id,
+        nonConfId,
+        qtePlanifiee: planification.qtePlanifiee,
+        qteModifiee: planification.qteModifiee,
+        quantiteSource,
+        decProduction: planification.decProduction,
+        deltaProd: planification.deltaProd,
+        ecart,
+        pourcentageJour
+      };
+    });
+
+    // 3. Calculer les totaux globaux
+    const totalEcart = details.reduce((sum, item) => sum + item.ecart, 0);
+    const totalQuantite = details.reduce((sum, item) => sum + item.quantiteSource, 0);
+    const pourcentageTotal = totalQuantite > 0 
+      ? Math.round((totalEcart / totalQuantite) * 100 * 10) / 10 
+      : 0;
+
+    console.log('Calculs finaux:', {
+      totalEcart,
+      totalQuantite,
+      pourcentageTotal
+    });
+
+    // 4. Calculer la répartition par cause (5M)
+    const nonConfs = await this.nonConfRepository
+      .createQueryBuilder('nonConf')
+      .leftJoin('nonConf.planification', 'planification')
+      .where('planification.semaine = :semaine', { semaine })
+      .andWhere('planification.ligne = :ligne', { ligne })
+      .andWhere('planification.reference = :reference', { reference })
+      .getMany();
+
+    const repartitionParCause = {
+      matierePremiere: nonConfs.reduce((sum, nc) => sum + nc.matierePremiere, 0),
+      absence: nonConfs.reduce((sum, nc) => sum + nc.absence, 0),
+      rendement: nonConfs.reduce((sum, nc) => sum + nc.rendement, 0),
+      maintenance: nonConfs.reduce((sum, nc) => sum + nc.maintenance, 0),
+      qualite: nonConfs.reduce((sum, nc) => sum + nc.qualite, 0)
+    };
+
+    const response = {
+      message: 'Calcul du pourcentage total des écarts',
+      semaine,
+      ligne,
+      reference,
+      totalEcart,
+      totalQuantite,
+      pourcentageTotal: `${pourcentageTotal}%`,
+      pourcentageTotalNumber: pourcentageTotal,
+      nombreJours: planifications.length,
+      repartitionParCause,
+      details
+    };
+
+    console.log('=== FIN getTotalEcartPourcentage ===');
+    return response;
+
+  } catch (error) {
+    console.error('Erreur dans getTotalEcartPourcentage:', error);
+    throw new InternalServerErrorException(
+      `Erreur lors du calcul du pourcentage total: ${error.message}`
+    );
+  }
+}
 }

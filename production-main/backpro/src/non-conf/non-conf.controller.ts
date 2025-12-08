@@ -21,6 +21,7 @@ import { CreateOrUpdateNonConfDto } from './dto/create-or-update-non-conf.dto';
 import { GetNonConfDto } from './dto/get-non-conf.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminRoleGuard } from '../auth/guards/admin-role.guard';
+import { GetTotalEcartDto } from './dto/get-total-ecart.dto';
 
 @Controller('nonconf')
 export class NonConfController {
@@ -133,5 +134,13 @@ export class NonConfController {
       version: '1.0.0',
       timestamp: new Date().toISOString()
     };
+  }
+  @Post('vu/total-ecart')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async getTotalEcartPourcentage(@Body() getTotalEcartDto: GetTotalEcartDto) {
+    const { semaine, ligne, reference } = getTotalEcartDto;
+    
+    return this.nonConfService.getTotalEcartPourcentage(semaine, ligne, reference);
   }
 }

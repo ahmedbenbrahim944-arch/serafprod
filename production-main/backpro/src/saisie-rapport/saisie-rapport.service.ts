@@ -13,6 +13,7 @@ import { CreateSaisieRapportDto } from './dto/create-saisie-rapport.dto';
 import { Ouvrier } from '../ouvrier/entities/ouvrier.entity';
 import { Phase } from '../phase/entities/phase.entity';
 import { Planification } from '../semaine/entities/planification.entity';
+import { NonConfService } from '../non-conf/non-conf.service';
 
 
 @Injectable()
@@ -26,12 +27,14 @@ export class SaisieRapportService {
     private phaseRepository: Repository<Phase>,
     @InjectRepository(Planification)
     private planificationRepository: Repository<Planification>,
+     private nonConfService: NonConfService,
   ) {}
 
   /**
    * Créer un nouveau rapport de phase
    */
-  async createRapport(createSaisieRapportDto: CreateSaisieRapportDto) {
+  // src/saisie-rapport/saisie-rapport.service.ts - Fonction createRapport complète
+async createRapport(createSaisieRapportDto: CreateSaisieRapportDto) {
   const { semaine, jour, ligne, matricule, phases } = createSaisieRapportDto;
 
   console.log('=== DÉBUT CRÉATION RAPPORT PHASE MULTIPLE ===');
@@ -65,18 +68,82 @@ export class SaisieRapportService {
   let totalDecProduction = 0;
   
   for (const plan of planificationsLigneSemaine) {
-    // Utiliser qteModifiee si > 0, sinon qtePlanifiee
     const quantiteSource = plan.qteModifiee > 0 ? plan.qteModifiee : plan.qtePlanifiee;
     totalQteSource += quantiteSource;
     totalDecProduction += plan.decProduction;
   }
 
-  // Calculer le PCsProd total de la ligne
   const pcsProdLigne = totalQteSource > 0 ? (totalDecProduction / totalQteSource) * 100 : 0;
 
   console.log(`PCsProd total pour la ligne ${ligne} semaine ${semaine}: ${pcsProdLigne.toFixed(2)}%`);
 
-  // 4. Vérifier les phases
+  // ✅ NOUVEAU : 4. CALCULER LE POURCENTAGE TOTAL DES ÉCARTS POUR CETTE LIGNE
+  let pourcentageTotalEcart = 0;
+  try {
+    // Récupérer toutes les références de cette ligne pour cette semaine
+    const planificationsAvecReferences = await this.planificationRepository.find({
+      where: { semaine, ligne },
+      select: ['reference']
+    });
+
+    // Obtenir les références uniques
+    const referencesUniques = [...new Set(planificationsAvecReferences.map(p => p.reference))];
+    console.log(`Références trouvées pour la ligne ${ligne}:`, referencesUniques);
+
+    // Pour chaque référence, calculer le pourcentage d'écart et faire la moyenne
+    if (referencesUniques.length > 0) {
+      let totalPourcentages = 0;
+      let nbReferencesAvecEcart = 0;
+
+      for (const reference of referencesUniques) {
+        try {
+          // Utiliser le service non-conf existant
+          const resultatEcart = await this.nonConfService.getTotalEcartPourcentage(semaine, ligne, reference);
+          
+          // ✅ CORRECTION : Extraire le pourcentage selon le type de retour
+          let pourcentage = 0;
+          
+          if (resultatEcart && typeof resultatEcart === 'object') {
+            // Vérifier si pourcentageTotalNumber existe (type avec données)
+            if ('pourcentageTotalNumber' in resultatEcart && resultatEcart.pourcentageTotalNumber) {
+              pourcentage = resultatEcart.pourcentageTotalNumber;
+            } 
+            // Vérifier si pourcentageTotal existe (type string "32.5%")
+            else if ('pourcentageTotal' in resultatEcart && resultatEcart.pourcentageTotal) {
+              const pourcentageStr = resultatEcart.pourcentageTotal;
+              // Extraire le nombre du string "32.5%"
+              const match = pourcentageStr.toString().match(/(\d+(\.\d+)?)/);
+              pourcentage = match ? parseFloat(match[0]) : 0;
+            }
+            // Vérifier si pourcentageTotal existe directement comme number
+            else if ('pourcentageTotal' in resultatEcart && typeof resultatEcart.pourcentageTotal === 'number') {
+              pourcentage = resultatEcart.pourcentageTotal;
+            }
+          }
+          
+          if (pourcentage > 0) {
+            totalPourcentages += pourcentage;
+            nbReferencesAvecEcart++;
+            console.log(`Pourcentage écart pour ${reference}: ${pourcentage}%`);
+          }
+        } catch (error) {
+          console.warn(`Erreur calcul écart pour ${reference}:`, error.message);
+        }
+      }
+
+      // Calculer la moyenne
+      if (nbReferencesAvecEcart > 0) {
+        pourcentageTotalEcart = Math.round((totalPourcentages / nbReferencesAvecEcart) * 10) / 10;
+      }
+    }
+
+    console.log(`Pourcentage total des écarts pour la ligne ${ligne}: ${pourcentageTotalEcart}%`);
+  } catch (error) {
+    console.error('Erreur calcul pourcentage total écart:', error);
+    // Ne pas bloquer la création du rapport si le calcul échoue
+  }
+
+  // 5. Vérifier les phases
   for (const phaseHeure of phases) {
     const phaseExiste = await this.phaseRepository.findOne({ 
       where: { ligne, phase: phaseHeure.phase } 
@@ -87,7 +154,7 @@ export class SaisieRapportService {
     }
   }
 
-  // 5. Vérifier si cet ouvrier a déjà un rapport ce jour-là
+  // 6. Vérifier si cet ouvrier a déjà un rapport ce jour-là
   const rapportExistant = await this.saisieRapportRepository.findOne({
     where: { semaine, jour, matricule }
   });
@@ -98,7 +165,7 @@ export class SaisieRapportService {
     );
   }
 
-  // 6. Calculer les totaux
+  // 7. Calculer les totaux
   const totalHeuresNouvelles = phases.reduce((total, phase) => total + phase.heures, 0);
   
   if (totalHeuresNouvelles > 8) {
@@ -107,7 +174,7 @@ export class SaisieRapportService {
     );
   }
 
-  // 7. Vérifier le nombre de phases
+  // 8. Vérifier le nombre de phases
   if (phases.length > 3) {
     throw new BadRequestException(
       `Nombre de phases (${phases.length}) dépasse la limite de 3 phases par jour`
@@ -122,12 +189,12 @@ export class SaisieRapportService {
     nouveauRapport.ligne = ligne;
     nouveauRapport.matricule = matricule;
     nouveauRapport.nomPrenom = ouvrier.nomPrenom;
-    nouveauRapport.phases = phases; // Stocker le tableau JSON
+    nouveauRapport.phases = phases;
     nouveauRapport.totalHeuresJour = totalHeuresNouvelles;
     nouveauRapport.heuresRestantes = 8 - totalHeuresNouvelles;
     nouveauRapport.nbPhasesJour = phases.length;
-    // NOUVEAU : Ajouter le PCsProd de la ligne
-    nouveauRapport.pcsProdLigne = Math.round(pcsProdLigne * 100) / 100; // Arrondir à 2 décimales
+    nouveauRapport.pcsProdLigne = Math.round(pcsProdLigne * 100) / 100;
+    nouveauRapport.pourcentageTotalEcart = pourcentageTotalEcart; // ✅ NOUVEAU : Sauvegarde du pourcentage
 
     const rapportSauvegarde = await this.saisieRapportRepository.save(nouveauRapport);
 
@@ -146,7 +213,8 @@ export class SaisieRapportService {
         totalHeuresJour: rapportSauvegarde.totalHeuresJour,
         heuresRestantes: rapportSauvegarde.heuresRestantes,
         nbPhasesJour: rapportSauvegarde.nbPhasesJour,
-        pcsProdLigne: `${rapportSauvegarde.pcsProdLigne}%`, // Formaté en pourcentage
+        pcsProdLigne: `${rapportSauvegarde.pcsProdLigne}%`,
+        pourcentageTotalEcart: `${rapportSauvegarde.pourcentageTotalEcart}%`, // ✅ NOUVEAU : Inclure dans la réponse
         createdAt: rapportSauvegarde.createdAt,
         updatedAt: rapportSauvegarde.updatedAt
       }
@@ -223,148 +291,161 @@ export class SaisieRapportService {
     }
   }
 
-   async voirRapportsSemaine(semaine: string) {
-    try {
-      console.log(`=== RÉCUPÉRATION DES RAPPORTS POUR LA SEMAINE: ${semaine} ===`);
-      
-      // Récupérer tous les rapports de la semaine
-      const rapports = await this.saisieRapportRepository.find({
-        where: { semaine },
-        order: { 
-          jour: 'ASC',
-          ligne: 'ASC',
-          matricule: 'ASC'
-        }
-      });
+   // Dans saisie-rapport.service.ts - méthode voirRapportsSemaine
+async voirRapportsSemaine(semaine: string) {
+  try {
+    console.log(`=== RÉCUPÉRATION DES RAPPORTS POUR LA SEMAINE: ${semaine} ===`);
+    
+    const rapports = await this.saisieRapportRepository.find({
+      where: { semaine },
+      order: { 
+        jour: 'ASC',
+        ligne: 'ASC',
+        matricule: 'ASC'
+      }
+    });
 
-      if (rapports.length === 0) {
-        return {
-          message: `Aucun rapport trouvé pour la semaine "${semaine}"`,
-          semaine,
-          totalRapports: 0,
-          rapports: [],
-          statistiques: {
-            totalHeures: 0,
-            totalOuvriers: 0,
-            totalLignes: 0,
-            moyenneHeuresParOuvrier: 0,
-            repartitionParJour: {},
-            repartitionParLigne: {}
-          }
+    if (rapports.length === 0) {
+      return {
+        message: `Aucun rapport trouvé pour la semaine "${semaine}"`,
+        semaine,
+        totalRapports: 0,
+        rapports: [],
+        statistiques: {
+          totalHeures: 0,
+          totalOuvriers: 0,
+          totalLignes: 0,
+          moyenneHeuresParOuvrier: 0,
+          moyenneEcartPourcentage: 0, // ✅ NOUVEAU
+          repartitionParJour: {},
+          repartitionParLigne: {}
+        }
+      };
+    }
+
+    // Calculer les statistiques
+    const matricules = new Set<number>();
+    const lignes = new Set<string>();
+    const jours = new Set<string>();
+    let totalHeuresSemaine = 0;
+    let totalPourcentageEcart = 0;
+    let lignesAvecEcart = 0;
+    
+    const repartitionParJour: Record<string, { rapports: number, heures: number, ouvriers: Set<number> }> = {};
+    const repartitionParLigne: Record<string, { rapports: number, heures: number, ouvriers: Set<number>, pourcentageEcart: number }> = {};
+
+    // Traiter chaque rapport
+    rapports.forEach(rapport => {
+      matricules.add(rapport.matricule);
+      lignes.add(rapport.ligne);
+      jours.add(rapport.jour);
+      totalHeuresSemaine += rapport.totalHeuresJour;
+      
+      // Accumuler les pourcentages d'écart
+      if (rapport.pourcentageTotalEcart > 0) {
+        totalPourcentageEcart += rapport.pourcentageTotalEcart;
+        lignesAvecEcart++;
+      }
+      
+      // Répartition par jour
+      if (!repartitionParJour[rapport.jour]) {
+        repartitionParJour[rapport.jour] = {
+          rapports: 0,
+          heures: 0,
+          ouvriers: new Set<number>()
         };
       }
-
-      // Calculer les statistiques
-      const matricules = new Set<number>();
-      const lignes = new Set<string>();
-      const jours = new Set<string>();
-      let totalHeuresSemaine = 0;
+      repartitionParJour[rapport.jour].rapports++;
+      repartitionParJour[rapport.jour].heures += rapport.totalHeuresJour;
+      repartitionParJour[rapport.jour].ouvriers.add(rapport.matricule);
       
-      const repartitionParJour: Record<string, { rapports: number, heures: number, ouvriers: Set<number> }> = {};
-      const repartitionParLigne: Record<string, { rapports: number, heures: number, ouvriers: Set<number> }> = {};
+      // Répartition par ligne
+      if (!repartitionParLigne[rapport.ligne]) {
+        repartitionParLigne[rapport.ligne] = {
+          rapports: 0,
+          heures: 0,
+          ouvriers: new Set<number>(),
+          pourcentageEcart: rapport.pourcentageTotalEcart
+        };
+      } else {
+        // Mettre à jour si nécessaire
+        repartitionParLigne[rapport.ligne].pourcentageEcart = rapport.pourcentageTotalEcart;
+      }
+      repartitionParLigne[rapport.ligne].rapports++;
+      repartitionParLigne[rapport.ligne].heures += rapport.totalHeuresJour;
+      repartitionParLigne[rapport.ligne].ouvriers.add(rapport.matricule);
+    });
 
-      // Traiter chaque rapport
-      rapports.forEach(rapport => {
-        // Compter les ouvriers uniques
-        matricules.add(rapport.matricule);
-        
-        // Compter les lignes uniques
-        lignes.add(rapport.ligne);
-        
-        // Compter les jours uniques
-        jours.add(rapport.jour);
-        
-        // Ajouter les heures totales
-        totalHeuresSemaine += rapport.totalHeuresJour;
-        
-        // Répartition par jour
-        if (!repartitionParJour[rapport.jour]) {
-          repartitionParJour[rapport.jour] = {
-            rapports: 0,
-            heures: 0,
-            ouvriers: new Set<number>()
-          };
-        }
-        repartitionParJour[rapport.jour].rapports++;
-        repartitionParJour[rapport.jour].heures += rapport.totalHeuresJour;
-        repartitionParJour[rapport.jour].ouvriers.add(rapport.matricule);
-        
-        // Répartition par ligne
-        if (!repartitionParLigne[rapport.ligne]) {
-          repartitionParLigne[rapport.ligne] = {
-            rapports: 0,
-            heures: 0,
-            ouvriers: new Set<number>()
-          };
-        }
-        repartitionParLigne[rapport.ligne].rapports++;
-        repartitionParLigne[rapport.ligne].heures += rapport.totalHeuresJour;
-        repartitionParLigne[rapport.ligne].ouvriers.add(rapport.matricule);
-      });
+    // Calculer la moyenne
+    const moyenneHeuresParOuvrier = matricules.size > 0 
+      ? totalHeuresSemaine / matricules.size 
+      : 0;
+    
+    const moyenneEcartPourcentage = lignesAvecEcart > 0
+      ? Math.round((totalPourcentageEcart / lignesAvecEcart) * 10) / 10
+      : 0;
 
-      // Calculer la moyenne d'heures par ouvrier
-      const moyenneHeuresParOuvrier = matricules.size > 0 
-        ? totalHeuresSemaine / matricules.size 
-        : 0;
+    // Formater les rapports
+    const rapportsFormates = rapports.map(rapport => ({
+      id: rapport.id,
+      semaine: rapport.semaine,
+      jour: rapport.jour,
+      ligne: rapport.ligne,
+      matricule: rapport.matricule,
+      nomPrenom: rapport.nomPrenom,
+      phases: rapport.phases,
+      totalHeuresJour: rapport.totalHeuresJour,
+      heuresRestantes: rapport.heuresRestantes,
+      nbPhasesJour: rapport.nbPhasesJour,
+      pcsProdLigne: `${rapport.pcsProdLigne}%`,
+      pourcentageTotalEcart: `${rapport.pourcentageTotalEcart}%`, // ✅ NOUVEAU
+      createdAt: rapport.createdAt,
+      updatedAt: rapport.updatedAt
+    }));
 
-      // Formater les rapports pour la réponse
-      const rapportsFormates = rapports.map(rapport => ({
-        id: rapport.id,
-        semaine: rapport.semaine,
-        jour: rapport.jour,
-        ligne: rapport.ligne,
-        matricule: rapport.matricule,
-        nomPrenom: rapport.nomPrenom,
-        phases: rapport.phases,
-        totalHeuresJour: rapport.totalHeuresJour,
-        heuresRestantes: rapport.heuresRestantes,
-        nbPhasesJour: rapport.nbPhasesJour,
-        pcsProdLigne: `${rapport.pcsProdLigne}%`,
-        createdAt: rapport.createdAt,
-        updatedAt: rapport.updatedAt
-      }));
+    // Formater les statistiques
+    const statistiques = {
+      totalRapports: rapports.length,
+      totalHeures: totalHeuresSemaine,
+      totalOuvriers: matricules.size,
+      totalLignes: lignes.size,
+      totalJours: jours.size,
+      moyenneHeuresParOuvrier: Math.round(moyenneHeuresParOuvrier * 100) / 100,
+      moyenneEcartPourcentage, // ✅ NOUVEAU
+      repartitionParJour: Object.entries(repartitionParJour).reduce((acc, [jour, data]) => {
+        acc[jour] = {
+          rapports: data.rapports,
+          heures: data.heures,
+          ouvriers: data.ouvriers.size
+        };
+        return acc;
+      }, {} as Record<string, any>),
+      repartitionParLigne: Object.entries(repartitionParLigne).reduce((acc, [ligne, data]) => {
+        acc[ligne] = {
+          rapports: data.rapports,
+          heures: data.heures,
+          ouvriers: data.ouvriers.size,
+          pourcentageEcart: `${data.pourcentageEcart}%` // ✅ NOUVEAU
+        };
+        return acc;
+      }, {} as Record<string, any>)
+    };
 
-      // Formater les statistiques
-      const statistiques = {
-        totalRapports: rapports.length,
-        totalHeures: totalHeuresSemaine,
-        totalOuvriers: matricules.size,
-        totalLignes: lignes.size,
-        totalJours: jours.size,
-        moyenneHeuresParOuvrier: Math.round(moyenneHeuresParOuvrier * 100) / 100,
-        repartitionParJour: Object.entries(repartitionParJour).reduce((acc, [jour, data]) => {
-          acc[jour] = {
-            rapports: data.rapports,
-            heures: data.heures,
-            ouvriers: data.ouvriers.size
-          };
-          return acc;
-        }, {} as Record<string, any>),
-        repartitionParLigne: Object.entries(repartitionParLigne).reduce((acc, [ligne, data]) => {
-          acc[ligne] = {
-            rapports: data.rapports,
-            heures: data.heures,
-            ouvriers: data.ouvriers.size
-          };
-          return acc;
-        }, {} as Record<string, any>)
-      };
+    console.log(`=== RAPPORTS RÉCUPÉRÉS: ${rapports.length} pour la semaine ${semaine} ===`);
 
-      console.log(`=== RAPPORTS RÉCUPÉRÉS: ${rapports.length} pour la semaine ${semaine} ===`);
+    return {
+      message: `Rapports de la semaine "${semaine}" récupérés avec succès`,
+      semaine,
+      totalRapports: rapports.length,
+      rapports: rapportsFormates,
+      statistiques
+    };
 
-      return {
-        message: `Rapports de la semaine "${semaine}" récupérés avec succès`,
-        semaine,
-        totalRapports: rapports.length,
-        rapports: rapportsFormates,
-        statistiques
-      };
-
-    } catch (error) {
-      console.error('Erreur lors de la récupération des rapports par semaine:', error);
-      throw new InternalServerErrorException('Erreur lors de la récupération des rapports de la semaine');
-    }
+  } catch (error) {
+    console.error('Erreur lors de la récupération des rapports par semaine:', error);
+    throw new InternalServerErrorException('Erreur lors de la récupération des rapports de la semaine');
   }
+}
 
   /**
    * Récupérer les rapports par semaine et jour

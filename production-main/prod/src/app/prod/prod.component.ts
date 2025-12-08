@@ -18,6 +18,9 @@ import { HttpHeaders } from '@angular/common/http';
 import { RapportPhaseService } from '../prod/rapport-phase.service';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { StatsService } from './stats.service';
+import { ChartService } from './chart.service';
+import { Chart } from 'chart.js';
 
 
 
@@ -50,6 +53,15 @@ interface WeekForm {
     nom?: string;
     dateDebut?: string;
     dateFin?: string;
+  };
+}
+
+interface StatsForm {
+  semaine: string;
+  ligne: string;
+  errors: {
+    semaine?: string;
+    ligne?: string;
   };
 }
 
@@ -139,6 +151,8 @@ export class ProdComponent implements OnInit {
   private userService = inject(UserService);
   private http = inject(HttpClient);
   private rapportPhaseService = inject(RapportPhaseService);
+  private statsService = inject(StatsService); 
+  private chartService = inject(ChartService);
 
   showImageUploadModal = false;
   selectedLineImage: File | null = null;
@@ -172,6 +186,8 @@ downloadLineSummaryForm: DownloadLineSummaryForm = {
 };
 
 lineSummaryStats = signal<any>(null);
+
+charts: Chart[] = [];
   
   
 
@@ -190,6 +206,15 @@ lineSummaryStats = signal<any>(null);
   references: '',
   errors: {}
 };
+
+statsForm: StatsForm = {
+  semaine: '',
+  ligne: '',
+  errors: {}
+};
+
+loadingStatsData = signal(false);
+statsData = signal<any>(null);
 
   weekForm: WeekForm = {
   nom: '', // Au lieu de weekNumber
@@ -1624,7 +1649,8 @@ private async generateExcelFile(rapports: any[], semaine: string): Promise<void>
     { header: 'Total Heures/Jour', key: 'totalHeuresJour', width: 20 },
     { header: 'Heures Restantes', key: 'heuresRestantes', width: 20 },
     { header: 'Nb Phases/Jour', key: 'nbPhasesJour', width: 20 },
-    { header: 'PCS Prod Ligne', key: 'pcsProdLigne', width: 20 }
+    { header: 'PCS Prod Ligne', key: 'pcsProdLigne', width: 20 },
+    { header: 'Pourcentage Total Écart', key: 'pourcentageTotalEcart', width: 25 }
   ];
   
   // Données - UTILISER LES VRAIS CHAMPS DE VOTRE BASE
@@ -1649,7 +1675,8 @@ private async generateExcelFile(rapports: any[], semaine: string): Promise<void>
       totalHeuresJour: rapport.totalHeuresJour || 0,
       heuresRestantes: rapport.heuresRestantes || 0,
       nbPhasesJour: rapport.nbPhasesJour || 0,
-      pcsProdLigne: rapport.pcsProdLigne || 0
+      pcsProdLigne: rapport.pcsProdLigne || 0,
+      pourcentageTotalEcart: rapport.pourcentageTotalEcart || 0 
     });
     
     // Style alterné
@@ -1667,6 +1694,9 @@ private async generateExcelFile(rapports: any[], semaine: string): Promise<void>
     
     const heuresRestantesCell = row.getCell('heuresRestantes');
     heuresRestantesCell.numFmt = '0.00';
+
+    const pourcentageCell = row.getCell('pourcentageTotalEcart');
+    pourcentageCell.numFmt = '0.00%';
   });
   
   // Style des en-têtes
@@ -2220,30 +2250,218 @@ toggleMobileSidebar() {
   }
 
   // AJOUTER CETTE MÉTHODE POUR OBTENIR LE TITRE DE L'ONGLET ACTIF :
-  getTabTitle(): string {
-    const titles: { [key: string]: string } = {
-      'view': 'Vue d\'ensemble des Lignes',
-      'create': 'Créer une Nouvelle Ligne',
-      'add-ref': 'Ajouter des Références',
-      'new-week': 'Créer une Nouvelle Semaine',
-      'planning': 'Planification',
-      'add-user': 'Ajouter un Utilisateur',
-      'add-time': 'Définir le Temps par Seconde',
-      'add-worker': 'Ajouter un Ouvrier',
-      'add-phase': 'Gestion des Phases',
-      'download-phase': 'Télécharger les Rapports de Phase',
-      'download-line-summary': 'Résumé par Ligne'
-    };
-    return titles[this.activeTab()] || 'PDP - Système de Gestion';
-  }
+  
 
   // Modifier la méthode setActiveTab existante pour fermer le menu mobile :
-  setActiveTab(tab: string) {
-    this.activeTab.set(tab);
-    this.mobileMenuOpen = false; // Fermer le menu mobile après sélection
-    this.errorMessage.set('');
-    this.successMessage.set('');
-    this.showSuccess.set(false);
+ 
+ 
+
+// Ajouter cette méthode pour réinitialiser le formulaire de stats
+private resetStatsForm() {
+  this.statsForm = {
+    semaine: '',
+    ligne: '',
+    errors: {}
+  };
+  this.statsData.set(null);
+}
+
+// Ajouter cette méthode pour annuler la vue des stats
+
+
+// Ajouter cette méthode dans la liste des méthodes de navigation
+setActiveTab(tab: string) {
+  this.activeTab.set(tab);
+  this.mobileMenuOpen = false;
+  this.errorMessage.set('');
+  this.successMessage.set('');
+  this.showSuccess.set(false);
+  
+  // Réinitialiser les données de stats si on quitte l'onglet
+  if (tab !== 'view-stats') {
+    this.statsData.set(null);
+  }
+}
+
+// Ajouter dans le getTabTitle()
+getTabTitle(): string {
+  const titles: { [key: string]: string } = {
+    'view': 'Vue d\'ensemble des Lignes',
+    'create': 'Créer une Nouvelle Ligne',
+    'add-ref': 'Ajouter des Références',
+    'new-week': 'Créer une Nouvelle Semaine',
+    'planning': 'Planification',
+    'add-user': 'Ajouter un Utilisateur',
+    'add-time': 'Définir le Temps par Seconde',
+    'add-worker': 'Ajouter un Ouvrier',
+    'add-phase': 'Gestion des Phases',
+    'download-phase': 'Télécharger les Rapports de Phase',
+    'download-line-summary': 'Résumé par Ligne',
+    'view-stats': 'Voir les Statistiques' // Ajouter cette ligne
+  };
+  return titles[this.activeTab()] || 'PDP - Système de Gestion';
+}
+isAdmin(): boolean {
+  return this.getUserType() === 'admin';
+}
+
+onViewStats() {
+  // Validation
+  this.statsForm.errors = {};
+  let hasErrors = false;
+
+  if (!this.statsForm.semaine.trim()) {
+    this.statsForm.errors.semaine = 'La semaine est requise';
+    hasErrors = true;
+  }
+
+  if (!this.statsForm.ligne.trim()) {
+    this.statsForm.errors.ligne = 'La ligne est requise';
+    hasErrors = true;
+  }
+
+  if (hasErrors) return;
+
+  this.loadingStatsData.set(true);
+  this.errorMessage.set(null);
+  
+  // Détruire les graphiques existants
+  this.chartService.destroyCharts(this.charts);
+  this.charts = [];
+
+  const getStatsDto = {
+    semaine: this.statsForm.semaine.trim(),
+    ligne: this.statsForm.ligne.trim()
+  };
+
+  this.statsService.getStatsBySemaineAndLigne(getStatsDto)
+    .pipe(
+      takeUntilDestroyed(this.destroyRef),
+      catchError(error => {
+        console.error('Erreur lors du chargement des statistiques:', error);
+        if (error.status === 404) {
+          this.errorMessage.set(`Aucune donnée trouvée pour la ligne ${this.statsForm.ligne} en semaine ${this.statsForm.semaine}`);
+        } else {
+          this.errorMessage.set('Erreur lors du chargement des statistiques');
+        }
+        return of(null);
+      }),
+      finalize(() => this.loadingStatsData.set(false))
+    )
+    .subscribe({
+      next: (response) => {
+        if (response) {
+          this.statsData.set(response);
+          this.activeTab.set('view-stats');
+          this.showSuccessMessage(`Statistiques chargées pour ${this.statsForm.ligne} - ${this.statsForm.semaine}`);
+          
+          // Créer les graphiques après un délai pour permettre au DOM de se mettre à jour
+          setTimeout(() => {
+            this.createCharts();
+          }, 100);
+        }
+      }
+    });
+}
+
+// Méthode pour créer les graphiques
+private createCharts(): void {
+  if (!this.statsData()) return;
+
+  const stats = this.statsData();
+  
+  // Graphique 1: Quantités
+  const qtyCanvas = document.getElementById('quantityChart') as HTMLCanvasElement;
+  if (qtyCanvas) {
+    const ctx = qtyCanvas.getContext('2d');
+    if (ctx) {
+      const chart = this.chartService.createQuantityChart(ctx, stats);
+      this.charts.push(chart);
+    }
+  }
+
+  // Graphique 2: PCS Prod
+  const pcsCanvas = document.getElementById('pcsChart') as HTMLCanvasElement;
+  if (pcsCanvas) {
+    const ctx = pcsCanvas.getContext('2d');
+    if (ctx) {
+      const chart = this.chartService.createPcsChart(ctx, stats);
+      this.charts.push(chart);
+    }
+  }
+
+  // Graphique 3: Répartition des écarts (camembert)
+  const pieCanvas = document.getElementById('ecartPieChart') as HTMLCanvasElement;
+  if (pieCanvas) {
+    const ctx = pieCanvas.getContext('2d');
+    if (ctx) {
+      const chart = this.chartService.createEcartPieChart(ctx, stats);
+      this.charts.push(chart);
+    }
+  }
+
+  // Graphique 4: Écarts par jour
+  const barCanvas = document.getElementById('ecartBarChart') as HTMLCanvasElement;
+  if (barCanvas) {
+    const ctx = barCanvas.getContext('2d');
+    if (ctx) {
+      const chart = this.chartService.createEcartBarChart(ctx, stats);
+      this.charts.push(chart);
+    }
+  }
+
+  // Graphique 5: Comparaison
+  const comparisonCanvas = document.getElementById('comparisonChart') as HTMLCanvasElement;
+  if (comparisonCanvas) {
+    const ctx = comparisonCanvas.getContext('2d');
+    if (ctx) {
+      const chart = this.chartService.createComparisonChart(ctx, stats);
+      this.charts.push(chart);
+    }
+  }
+}
+
+// Modifier onCancelStats pour nettoyer les graphiques
+onCancelStats() {
+  this.chartService.destroyCharts(this.charts);
+  this.charts = [];
+  this.resetStatsForm();
+  this.activeTab.set('view');
+}
+
+// Nettoyer les graphiques lors de la destruction du composant
+ngOnDestroy() {
+  this.chartService.destroyCharts(this.charts);
+}
+
+async exportCharts() {
+    if (!this.charts || this.charts.length === 0) {
+      this.errorMessage.set('Aucun graphique à exporter');
+      return;
+    }
+
+    try {
+      // Télécharger chaque graphique individuellement
+      this.charts.forEach((chart, index) => {
+        if (chart && chart.canvas) {
+          const canvas = chart.canvas;
+          const imageUrl = canvas.toDataURL('image/png');
+          
+          // Créer un lien de téléchargement temporaire
+          const link = document.createElement('a');
+          link.href = imageUrl;
+          link.download = `graphique-${index + 1}-${this.statsForm.semaine}-${this.statsForm.ligne}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      });
+      
+      this.showSuccessMessage('Graphiques exportés avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de l\'export:', error);
+      this.errorMessage.set('Erreur lors de l\'export des graphiques');
+    }
   }
 
 }
