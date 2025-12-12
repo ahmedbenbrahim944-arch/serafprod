@@ -241,37 +241,46 @@ showMPSuggestions = signal(false);
     }));
     this.particles.set(particles);
   }
+  private getImageUrl(productLine: ProductLine): string {
+  if (productLine.imageUrl) {
+    return this.productService.getImageUrl(productLine.imageUrl);
+  }
+  return this.getDefaultImageUrl(productLine.ligne);
+}
+handleImageError(event: Event, line: ProductionLine): void {
+  const img = event.target as HTMLImageElement;
+  img.src = this.getDefaultImageUrl(line.ligne);
+}
 
   private loadProductionLines(): void {
-    this.loading.set(true);
-    
-    this.productService.getAllLines().subscribe({
-      next: (response) => {
-        if (response && response.lines && Array.isArray(response.lines)) {
-          const lines: ProductionLine[] = response.lines.map((productLine: ProductLine) => {
-            return {
-              ligne: productLine.ligne,
-              referenceCount: productLine.referenceCount || productLine.references?.length || 0,
-              imageUrl: productLine.imageUrl || this.getDefaultImageUrl(productLine.ligne),
-              references: productLine.references || [],
-              isActive: true
-            };
-          });
-          
-          this.availableLines.set(lines);
-        } else {
-          this.loadMockProductionLines();
-        }
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Erreur chargement lignes:', error);
+  this.loading.set(true);
+  
+  this.productService.getAllLines().subscribe({
+    next: (response) => {
+      if (response && response.lines && Array.isArray(response.lines)) {
+        const lines: ProductionLine[] = response.lines.map((productLine: ProductLine) => {
+          return {
+            ligne: productLine.ligne,
+            referenceCount: productLine.referenceCount || productLine.references?.length || 0,
+            imageUrl: this.getImageUrl(productLine), // ðŸ"´ CHANGEMENT ICI
+            references: productLine.references || [],
+            isActive: true
+          };
+        });
+        
+        this.availableLines.set(lines);
+      } else {
         this.loadMockProductionLines();
-        this.loading.set(false);
       }
-    });
-  }
-
+      this.loading.set(false);
+    },
+    error: (error) => {
+      console.error('Erreur chargement lignes:', error);
+      this.loadMockProductionLines();
+      this.loading.set(false);
+    }
+  });
+}
   // Méthode pour charger les matières premières par ligne
 private loadMatieresPremieres(ligne: string): void {
   this.loading.set(true);

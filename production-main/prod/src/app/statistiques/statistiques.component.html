@@ -1,0 +1,73 @@
+<div class="stats-container">
+  <!-- Header avec sélection de semaine -->
+  <div class="header">
+    <h1>Statistiques de Production</h1>
+    <div class="week-selector">
+      <label for="semaine">Semaine:</label>
+      <select 
+        id="semaine" 
+        [(ngModel)]="semaineSelectionnee" 
+        (change)="chargerStatistiques()"
+        class="semaine-select">
+        <option value="semaine1">Semaine 1</option>
+        <option value="semaine2">Semaine 2</option>
+        <option value="semaine3">Semaine 3</option>
+        <option value="semaine4">Semaine 4</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+    <!-- Sidebar avec les lignes -->
+    <div class="sidebar">
+      <h2>Lignes de Production</h2>
+      <div class="lignes-list">
+        <div 
+          *ngFor="let ligne of statsLignes" 
+          class="ligne-item"
+          [class.selected]="ligne.ligne === ligneSelectionnee"
+          (click)="selectionnerLigne(ligne.ligne)">
+          <div class="ligne-header">
+            <span class="ligne-nom">{{ ligne.ligne }}</span>
+            <span class="ligne-percentage">{{ ligne.pcsProdTotal }}%</span>
+          </div>
+          <div class="ligne-bar-container">
+            <div 
+              class="ligne-bar" 
+              [style.width.%]="ligne.pcsProdTotal"
+              [style.background-color]="getColorForPercentage(ligne.pcsProdTotal)">
+            </div>
+          </div>
+          <div class="ligne-info">
+            <small>Rendement</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone des graphiques -->
+    <div class="charts-area">
+      <!-- Histogramme -->
+      <div class="chart-container">
+        <h3>Production par Ligne</h3>
+        <canvas id="barChart"></canvas>
+      </div>
+
+      <!-- Graphiques circulaires -->
+      <div class="pie-charts-container">
+        <div 
+          *ngFor="let ligne of statsLignes" 
+          class="pie-chart-wrapper">
+          <h4>{{ ligne.ligne }}</h4>
+          <canvas [id]="'pieChart-' + ligne.ligne"></canvas>
+          <p class="pie-label">{{ ligne.pcsProdTotal }}%</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message de chargement -->
+  <div *ngIf="isLoading" class="loading">
+    Chargement des statistiques...
+  </div>
+</div>

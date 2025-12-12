@@ -32,7 +32,7 @@ export const adminGuard: CanActivateFn = (route, state) => {
 
   // Rediriger si pas admin
   if (authService.isLoggedIn()) {
-    router.navigate(['/prod2']); // Rediriger vers la page user
+    router.navigate(['/choix']); // Rediriger vers la page user
   } else {
     router.navigate(['/login']);
   }

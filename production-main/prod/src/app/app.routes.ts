@@ -4,6 +4,8 @@ import { LoginComponent } from './login/login.component';
 import { ProdComponent } from './prod/prod.component';
 import { PlanificationComponent } from './planification/planification.component';
 import { Prod2Component } from './prod2/prod2.component';
+import { ChoixComponent } from './choix/choix.component';
+import { StatistiquesComponent } from './statistiques/statistiques.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -11,6 +13,8 @@ export const routes: Routes = [
   { path: 'prod2', component: Prod2Component },
   { path: 'login', component: LoginComponent },
   { path: 'prod', component: ProdComponent },
+  { path: 'choix', component: ChoixComponent },
+  { path: 'stat', component: StatistiquesComponent },
   
   
 ];

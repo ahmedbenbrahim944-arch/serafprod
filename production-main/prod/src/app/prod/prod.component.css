@@ -37,15 +37,15 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   text-align: center;
 }
-
-.sidebar-title {
-  color: #0d0e0e;
-  
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  animation: neonPulse 3s ease-in-out infinite alternate;
+.sidebar-header .sidebar-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  animation: neonPulse 2s infinite alternate;
 }
+
+
 
 @keyframes neonPulse {
   from {
@@ -836,3 +836,11 @@ select.form-input optgroup {
     display: block;
   }
 }
+.nav-button-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Si vous voulez que l'icône change de couleur au survol ou quand active */

@@ -63,7 +63,7 @@ export class AuthService {
       .pipe(
         tap(response => {
           this.saveAuthData(response);
-          this.router.navigate(['/prod2']); // Route pour user
+          this.router.navigate(['/choix']); // Route pour user
         }),
         catchError(error => {
           console.error('User login error:', error);

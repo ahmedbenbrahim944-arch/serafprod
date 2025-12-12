@@ -136,7 +136,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       if (userType === 'admin') {
         this.router.navigate(['/prod']);
       } else {
-        this.router.navigate(['/prod2']);
+        this.router.navigate(['/choix']);
       }
     }
   }

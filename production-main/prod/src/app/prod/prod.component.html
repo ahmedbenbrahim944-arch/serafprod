@@ -36,25 +36,25 @@
     <!-- Header de la sidebar -->
     <div class="sidebar-header">
       <h1 class="sidebar-title">PDP</h1>
-      <p class="text-cyan-300 text-sm">Système de Gestion</p>
     </div>
 
     <!-- Navigation -->
-    <nav class="sidebar-nav">
-      <div class="nav-section">
-        <button 
-          (click)="setActiveTab('view')"
-          class="nav-button"
-          [class.active]="activeTab() === 'view'">
-          <span class="nav-button-icon">📋</span>
-          Voir les Lignes
-        </button>
+   <nav class="sidebar-nav">
+  <div class="nav-section">
+    <button 
+      (click)="setActiveTab('view')"
+      class="nav-button"
+      [class.active]="activeTab() === 'view'">
+      <img src="assets/icons/production.png" alt="View" class="nav-button-icon">
+      Voir les Lignes
+    </button>
+  
 
         <button 
           (click)="setActiveTab('create')"
           class="nav-button"
           [class.active]="activeTab() === 'create'">
-          <span class="nav-button-icon">➕</span>
+          <img src="assets/icons/plus.png" alt="View" class="nav-button-icon">
           Nouvelle Ligne
         </button>
 
@@ -62,7 +62,7 @@
           (click)="setActiveTab('add-ref')"
           class="nav-button"
           [class.active]="activeTab() === 'add-ref'">
-          <span class="nav-button-icon">🔧</span>
+          <img src="assets/icons/ajouter.png" alt="View" class="nav-button-icon">
           Ajouter Références
         </button>
 
@@ -70,7 +70,7 @@
           (click)="setActiveTab('new-week')"
           class="nav-button"
           [class.active]="activeTab() === 'new-week'">
-          <span class="nav-button-icon">📅</span>
+          <img src="assets/icons/semaine.png" alt="View" class="nav-button-icon">
           Nouvelle Semaine
         </button>
 
@@ -78,7 +78,7 @@
           [routerLink]="['/planification']"
           class="nav-button"
           [class.active]="activeTab() === 'planning'">
-          <span class="nav-button-icon">🗓️</span>
+          <img src="assets/icons/planifier.png" alt="View" class="nav-button-icon">
           Planification
         </button>
 
@@ -87,7 +87,7 @@
           (click)="setActiveTab('view-stats')"
           class="nav-button"
           [class.active]="activeTab() === 'view-stats'">
-          <span class="nav-button-icon">📈</span>
+          <img src="assets/icons/stat.png" alt="View" class="nav-button-icon">
           Voir Statistiques
         </button>
 
@@ -95,7 +95,7 @@
           (click)="setActiveTab('add-user')"
           class="nav-button"
           [class.active]="activeTab() === 'add-user'">
-          <span class="nav-button-icon">👤</span>
+          <img src="assets/icons/adduser.png" alt="View" class="nav-button-icon">
           Ajouter Utilisateur
         </button>
 
@@ -103,7 +103,7 @@
           (click)="setActiveTab('add-time')"
           class="nav-button"
           [class.active]="activeTab() === 'add-time'">
-          <span class="nav-button-icon">⏱️</span>
+          <img src="assets/icons/temps.png" alt="View" class="nav-button-icon">
           Ajouter Temps
         </button>
 
@@ -111,7 +111,7 @@
           (click)="setActiveTab('add-worker')"
           class="nav-button"
           [class.active]="activeTab() === 'add-worker'">
-          <span class="nav-button-icon">👷</span>
+          <img src="assets/icons/ouvriers.png" alt="View" class="nav-button-icon">
           Ajouter Ouvrier
         </button>
 
@@ -119,7 +119,7 @@
           (click)="setActiveTab('add-phase')"
           class="nav-button"
           [class.active]="activeTab() === 'add-phase'">
-          <span class="nav-button-icon">🔄</span>
+          <img src="assets/icons/pahse.png" alt="View" class="nav-button-icon">
           Ajouter Phase
         </button>
 
@@ -127,15 +127,15 @@
           (click)="setActiveTab('download-phase')"
           class="nav-button"
           [class.active]="activeTab() === 'download-phase'">
-          <span class="nav-button-icon">📥</span>
-          Télécharger Phase
+          <img src="assets/icons/pahse.png" alt="View" class="nav-button-icon">
+          rappor Phase
         </button>
 
         <button 
           (click)="setActiveTab('download-line-summary')"
           class="nav-button"
           [class.active]="activeTab() === 'download-line-summary'">
-          <span class="nav-button-icon">📊</span>
+          <img src="assets/icons/loupe.png" alt="View" class="nav-button-icon">
           Résumé Ligne
         </button>
       </div>
@@ -256,8 +256,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           <div>
-            <p class="text-red-300 font-medium">{{ errorMessage() }}</p>
-            <p class="text-red-400/80 text-sm mt-1">
+            <p class="text-gray-900 font-bold">{{ errorMessage() }}</p>
+            <p class="text-gray-800 text-sm mt-1">
               Vérifiez le nom de la semaine et réessayez.
               <span *ngIf="downloadPhaseForm.semaine.includes('semaine')" class="ml-1">
                 Semaines disponibles: semaine1 à semaine52
@@ -270,66 +270,83 @@
       <form (ngSubmit)="onDownloadPhaseReports()" class="space-y-6">
         <!-- Sélection de la semaine -->
         <div>
-          <label class="form-label">Sélectionner la Semaine *</label>
-          
-          <div class="relative">
-            <input 
-              type="text" 
-              [(ngModel)]="downloadPhaseForm.semaine" 
-              name="semaine"
-              (ngModelChange)="onSemaineChange($event)"
-              class="form-input pl-12"
-              [class.error]="downloadPhaseForm.errors.semaine"
-              [class.border-red-500]="errorMessage()?.includes('n\'existe pas')">            
-            <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-            </div>
-          </div>
-          
-          <div *ngIf="downloadPhaseForm.errors.semaine" class="form-error">
-            {{ downloadPhaseForm.errors.semaine }}
-          </div>
-          
-          <div class="mt-2 text-sm text-gray-400 flex items-center">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Format: "semaine" suivi du numéro (ex: semaine4, semaine47)
-          </div>
-          
-          <!-- Suggestions de semaines -->
-          <div *ngIf="downloadPhaseForm.semaine.trim() && errorMessage()" class="mt-3">
-            <p class="text-sm text-gray-400 mb-2">Essayez ces semaines courantes :</p>
-            <div class="flex flex-wrap gap-2">
-              <button 
-                type="button"
-                (click)="downloadPhaseForm.semaine = 'semaine4'"
-                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
-                semaine4
-              </button>
-              <button 
-                type="button"
-                (click)="downloadPhaseForm.semaine = 'semaine47'"
-                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
-                semaine47
-              </button>
-              <button 
-                type="button"
-                (click)="downloadPhaseForm.semaine = 'semaine48'"
-                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
-                semaine48
-              </button>
-              <button 
-                type="button"
-                (click)="downloadPhaseForm.semaine = 'semaine49'"
-                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
-                semaine49
-              </button>
-            </div>
-          </div>
+  <label class="form-label">Sélectionner la Semaine *</label>
+  
+  <!-- Boîte de sélection des semaines -->
+  <select 
+    [(ngModel)]="downloadPhaseForm.semaine" 
+    name="semaine"
+    (ngModelChange)="onSemaineChange($event)"
+    class="form-input pl-12"
+    [class.error]="downloadPhaseForm.errors.semaine"
+    [class.border-red-500]="errorMessage()?.includes('n\'existe pas')">
+    
+    <option value="" disabled selected>Sélectionnez une semaine</option>
+    
+    <!-- Générer les options de semaine1 à semaine52 -->
+    <option *ngFor="let week of getWeeksList()" [value]="week">
+      {{ week }}
+    </option>
+    
+  </select>
+  
+  <div *ngIf="downloadPhaseForm.errors.semaine" class="form-error">
+    {{ downloadPhaseForm.errors.semaine }}
+  </div>
+  
+  <!-- Indicateur de semaine sélectionnée -->
+  <div *ngIf="downloadPhaseForm.semaine" class="mt-3 p-3 bg-gray-700/30 rounded-xl border border-red-500/30">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center">
+        <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <div>
+          <span class="text-sm text-gray-400">Semaine sélectionnée :</span>
+          <div class="font-semibold text-red-400">{{ downloadPhaseForm.semaine }}</div>
         </div>
+      </div>
+      <div class="text-xs bg-red-600/20 text-red-300 px-2 py-1 rounded">
+        N° {{ downloadPhaseForm.semaine.replace('semaine', '') }}
+      </div>
+    </div>
+  </div>
+  
+  <div class="text-sm text-gray-400 mt-1">
+    52 semaines disponibles (semaine1 à semaine52)
+  </div>
+  
+  <!-- Suggestions de semaines (optionnel - à garder si utile) -->
+  <div *ngIf="downloadPhaseForm.semaine.trim() && errorMessage()" class="mt-3">
+    <p class="text-sm text-gray-400 mb-2">Semaines récentes :</p>
+    <div class="flex flex-wrap gap-2">
+      <button 
+        type="button"
+        (click)="downloadPhaseForm.semaine = 'semaine4'"
+        class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
+        semaine4
+      </button>
+      <button 
+        type="button"
+        (click)="downloadPhaseForm.semaine = 'semaine47'"
+        class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
+        semaine47
+      </button>
+      <button 
+        type="button"
+        (click)="downloadPhaseForm.semaine = 'semaine48'"
+        class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
+        semaine48
+      </button>
+      <button 
+        type="button"
+        (click)="downloadPhaseForm.semaine = 'semaine49'"
+        class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
+        semaine49
+      </button>
+    </div>
+  </div>
+</div>
 
         <!-- Boutons d'action -->
         <div class="flex gap-4">
@@ -412,7 +429,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           <div>
-            <p class="text-red-300 font-medium">{{ errorMessage() }}</p>
+            <p class="text-gray-900 font-bold">{{ errorMessage() }}</p>
           </div>
         </div>
       </div>
@@ -420,26 +437,47 @@
       <form (ngSubmit)="onDownloadLineSummary()" class="space-y-6">
         <!-- Sélection de la semaine -->
         <div>
-          <label class="form-label">Sélectionner la Semaine *</label>
-          <div class="relative">
-            <input 
-              type="text" 
-              [(ngModel)]="downloadLineSummaryForm.semaine" 
-              name="semaine"
-              (ngModelChange)="onSemaineChangeForLineSummary($event)"
-              class="form-input pl-12"
-              placeholder="Ex: semaine4"
-              [class.error]="downloadLineSummaryForm.errors.semaine">
-            <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-            </div>
-          </div>
-          <div *ngIf="downloadLineSummaryForm.errors.semaine" class="form-error">
-            {{ downloadLineSummaryForm.errors.semaine }}
-          </div>
+  <label class="form-label">Sélectionner la Semaine *</label>
+  
+  <!-- Boîte de sélection des semaines -->
+  <select 
+    [(ngModel)]="downloadLineSummaryForm.semaine" 
+    name="semaine"
+    (ngModelChange)="onSemaineChangeForLineSummary($event)"
+    class="form-input"
+    [class.error]="downloadLineSummaryForm.errors.semaine">
+    
+    <option value="" disabled selected>Sélectionnez une semaine</option>
+    
+    <!-- Générer les options de semaine1 à semaine52 -->
+    <option *ngFor="let week of getWeeksList()" [value]="week">
+      {{ week }}
+    </option>
+    
+  </select>
+  
+  <div *ngIf="downloadLineSummaryForm.errors.semaine" class="form-error">
+    {{ downloadLineSummaryForm.errors.semaine }}
+  </div>
+  
+  <!-- Aperçu de la semaine sélectionnée -->
+  <div *ngIf="downloadLineSummaryForm.semaine" class="mt-3 p-3 bg-gray-700/30 rounded-xl border border-amber-500/30">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center">
+        <svg class="w-5 h-5 text-amber-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <div>
+          <span class="text-sm text-gray-400">Semaine sélectionnée :</span>
+          <div class="font-semibold text-amber-400">{{ downloadLineSummaryForm.semaine }}</div>
         </div>
+      </div>
+      <div class="text-xs bg-amber-600/20 text-amber-300 px-2 py-1 rounded">
+        N° {{ downloadLineSummaryForm.semaine.replace('semaine', '') }}
+      </div>
+    </div>
+  </div>
+</div>
 
         <!-- Sélection de la ligne -->
         <div>
@@ -767,22 +805,45 @@
       <form (ngSubmit)="onCreateWeek()" class="space-y-6">
         <!-- Nom de la semaine -->
         <div>
-          <label class="form-label">Nom de la Semaine *</label>
-          <input 
-            type="text" 
-            [(ngModel)]="weekForm.nom" 
-            name="nom"
-            placeholder="Ex: semaine47, semaine48"
-            pattern="^semaine[0-9]{1,2}$"
-            class="form-input"
-            [class.error]="weekForm.errors.nom">
-          <div *ngIf="weekForm.errors.nom" class="form-error">
-            {{ weekForm.errors.nom }}
-          </div>
-          <div class="text-sm text-gray-400 mt-1">
-            Format: "semaineXX" où XX est le numéro de semaine
-          </div>
-        </div>
+  <label class="form-label">Nom de la Semaine *</label>
+  
+  <!-- Sélection des semaines -->
+  <select 
+    [(ngModel)]="weekForm.nom" 
+    name="nom"
+    class="form-input"
+    [class.error]="weekForm.errors.nom">
+    
+    <option value="" disabled selected>Sélectionnez une semaine</option>
+    
+    <!-- Générer les options de semaine1 à semaine52 -->
+    <option *ngFor="let week of getWeeksList()" [value]="week">
+      {{ week }}
+    </option>
+    
+  </select>
+  
+  <div *ngIf="weekForm.errors.nom" class="form-error">
+    {{ weekForm.errors.nom }}
+  </div>
+  
+  <!-- Aperçu de la semaine sélectionnée -->
+  <div *ngIf="weekForm.nom" class="mt-3 p-3 bg-gray-700/30 rounded-xl border border-purple-500/30">
+    <div class="flex items-center">
+      <svg class="w-5 h-5 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <div>
+        <span class="text-sm text-gray-400">Semaine sélectionnée :</span>
+        <div class="font-semibold text-purple-400">{{ weekForm.nom }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="text-sm text-gray-400 mt-1">
+    Sélectionnez une semaine de 1 à 52
+  </div>
+</div>
 
         <!-- Date de début -->
         <div>
@@ -952,6 +1013,7 @@
 
     <!-- Onglet: Ajouter Temps par Seconde -->
     <!-- Onglet: Ajouter Temps par Seconde -->
+<!-- Onglet: Ajouter Temps par Seconde -->
 <div *ngIf="activeTab() === 'add-time'" class="fade-in">
   <div class="max-w-2xl mx-auto">
     <div class="creation-card">
@@ -1081,53 +1143,6 @@
             <div class="text-sm text-gray-400">
               <span class="font-medium text-yellow-400">Explications :</span> Temps nécessaire pour produire 1 unité
             </div>
-            
-            <!-- Calcul automatique d'aide -->
-            <div *ngIf="timeForm.seconde > 0" class="text-sm bg-gray-800/50 p-3 rounded-lg">
-              <div class="grid grid-cols-2 gap-2">
-                <div class="text-gray-300">
-                  <div class="font-medium">Pour 100 unités :</div>
-                  <div class="text-yellow-300">{{ (timeForm.seconde * 100).toFixed(1) }} sec</div>
-                  <div class="text-xs text-gray-400">({{ ((timeForm.seconde * 100) / 60).toFixed(1) }} min)</div>
-                </div>
-                <div class="text-gray-300">
-                  <div class="font-medium">Pour 1 heure :</div>
-                  <div class="text-yellow-300">{{ (3600 / timeForm.seconde).toFixed(0) }} unités</div>
-                  <div class="text-xs text-gray-400">production horaire</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Boutons de temps prédéfinis -->
-            <div class="mt-2">
-              <div class="text-xs text-gray-400 mb-1">Temps courants :</div>
-              <div class="flex flex-wrap gap-2">
-                <button 
-                  type="button"
-                  (click)="timeForm.seconde = 60"
-                  class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
-                  60s (1 min)
-                </button>
-                <button 
-                  type="button"
-                  (click)="timeForm.seconde = 120"
-                  class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
-                  120s (2 min)
-                </button>
-                <button 
-                  type="button"
-                  (click)="timeForm.seconde = 180"
-                  class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
-                  180s (3 min)
-                </button>
-                <button 
-                  type="button"
-                  (click)="timeForm.seconde = 300"
-                  class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs transition-all duration-300">
-                  300s (5 min)
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1173,8 +1188,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           <div>
-            <p class="text-red-300 font-medium">{{ errorMessage() }}</p>
-            <p class="text-red-400/80 text-sm mt-1">Veuillez vérifier le matricule et réessayer.</p>
+            <p class="text-gray-900 font-bold">{{ errorMessage() }}</p>
+            <p class="text-gray-800 text-sm mt-1">Veuillez vérifier le matricule et réessayer.</p>
           </div>
         </div>
       </div>
@@ -1228,7 +1243,7 @@
                 </svg>
                 <span [ngClass]="{
                   'text-green-300': matriculeCheckResult.available,
-                  'text-red-300': !matriculeCheckResult.available
+                  'text-gray-900': !matriculeCheckResult.available
                 }">
                   {{ matriculeCheckResult.message }}
                 </span>
@@ -1238,7 +1253,7 @@
               <div *ngIf="!matriculeCheckResult.available && matriculeCheckResult.existingWorker" 
                    class="mt-2 pl-7">
                 <div class="text-sm">
-                  <div class="text-gray-300">
+                  <div class="text-gray-900 font-bold">
                     <span class="font-medium">Ouvrier existant :</span> 
                     {{ matriculeCheckResult.existingWorker.nomPrenom }}
                   </div>
@@ -1702,18 +1717,41 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Sélection de la semaine -->
           <div>
-            <label class="form-label">Semaine *</label>
-            <input 
-              type="text" 
-              [(ngModel)]="statsForm.semaine" 
-              name="semaine"
-              placeholder="Ex: semaine4, semaine47"
-              class="form-input"
-              [class.error]="statsForm.errors.semaine">
-            <div *ngIf="statsForm.errors.semaine" class="form-error">
-              {{ statsForm.errors.semaine }}
-            </div>
-          </div>
+  <label class="form-label">Semaine *</label>
+  
+  <!-- Boîte de sélection des semaines -->
+  <select 
+    [(ngModel)]="statsForm.semaine" 
+    name="semaine"
+    class="form-input"
+    [class.error]="statsForm.errors.semaine">
+    
+    <option value="" disabled selected>Sélectionnez une semaine</option>
+    
+    <!-- Générer les options de semaine1 à semaine52 -->
+    <option *ngFor="let week of getWeeksList()" [value]="week">
+      {{ week }}
+    </option>
+    
+  </select>
+  
+  <div *ngIf="statsForm.errors.semaine" class="form-error">
+    {{ statsForm.errors.semaine }}
+  </div>
+  
+  <!-- Aperçu de la semaine sélectionnée -->
+  <div *ngIf="statsForm.semaine" class="mt-3 p-3 bg-gray-700/30 rounded-xl border border-purple-500/30">
+    <div class="flex items-center">
+      <svg class="w-5 h-5 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <div>
+        <span class="text-sm text-gray-400">Semaine sélectionnée :</span>
+        <div class="font-semibold text-purple-400">{{ statsForm.semaine }}</div>
+      </div>
+    </div>
+  </div>
+</div>
 
           <!-- Sélection de la ligne -->
           <div>

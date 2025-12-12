@@ -1,0 +1,275 @@
+/* Styles pour le conteneur principal */
+.choix-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Titre */
+.titre {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+/* Description */
+.description {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  color: #5d6d7e;
+  text-align: center;
+  max-width: 600px;
+  margin-bottom: 40px;
+  line-height: 1.5;
+}
+
+/* Conteneur des boutons */
+.boutons-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  max-width: 1200px;
+  width: 100%;
+}
+
+/* Style de base pour tous les boutons (maintenant des liens) */
+.bouton-grand {
+  flex: 1;
+  min-width: 280px;
+  max-width: 500px;
+  height: auto;
+  min-height: 200px;
+  border: none;
+  border-radius: 20px;
+  padding: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none; /* Important pour les liens */
+  color: inherit; /* Hérite la couleur du texte */
+}
+
+/* Effet de survol pour tous les boutons */
+.bouton-grand:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  text-decoration: none; /* Assure qu'il n'y a pas de soulignement au survol */
+}
+
+/* Effet de clic pour tous les boutons */
+.bouton-grand:active {
+  transform: translateY(-2px);
+}
+
+/* Style pour les liens actifs */
+.bouton-grand.active {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Contenu du bouton */
+.bouton-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  z-index: 2;
+}
+
+/* Icône du bouton */
+.bouton-icon {
+  width: 60px;
+  height: 60px;
+  stroke-width: 1.5;
+}
+
+/* Titre du bouton */
+.bouton-titre {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Description du bouton */
+.bouton-description {
+  font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+  line-height: 1.4;
+  max-width: 90%;
+  margin: 0;
+}
+
+/* Bouton Statistique */
+.bouton-grand.statistique {
+  background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+  color: white;
+}
+
+.bouton-grand.statistique .bouton-icon {
+  stroke: #8eb1ff;
+}
+
+.bouton-grand.statistique:hover {
+  background: linear-gradient(135deg, #5a7ac7 0%, #2a3c68 100%);
+}
+
+/* Bouton Planning */
+.bouton-grand.planning {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+}
+
+.bouton-grand.planning .bouton-icon {
+  stroke: #a5ffd6;
+}
+
+.bouton-grand.planning:hover {
+  background: linear-gradient(135deg, #1aad9e 0%, #52ff99 100%);
+}
+
+/* Responsive Design */
+
+/* Pour les très grands écrans (desktop) */
+@media (min-width: 1200px) {
+  .boutons-container {
+    gap: 50px;
+  }
+  
+  .bouton-grand {
+    min-height: 250px;
+    padding: 40px;
+  }
+}
+
+/* Pour les tablettes et petits écrans desktop */
+@media (max-width: 992px) {
+  .boutons-container {
+    gap: 25px;
+  }
+  
+  .bouton-grand {
+    min-width: 240px;
+    min-height: 180px;
+    padding: 25px;
+  }
+}
+
+/* Pour les tablettes en mode portrait */
+@media (max-width: 768px) {
+  .choix-container {
+    padding: 15px;
+  }
+  
+  .boutons-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .bouton-grand {
+    width: 100%;
+    max-width: 400px;
+    min-height: 170px;
+    padding: 20px;
+  }
+  
+  .bouton-icon {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* Pour les téléphones en mode paysage */
+@media (max-width: 576px) and (orientation: landscape) {
+  .choix-container {
+    min-height: auto;
+    padding: 10px;
+  }
+  
+  .titre {
+    margin-bottom: 5px;
+  }
+  
+  .description {
+    margin-bottom: 20px;
+  }
+  
+  .bouton-grand {
+    min-height: 140px;
+    padding: 15px;
+  }
+  
+  .bouton-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .bouton-content {
+    gap: 10px;
+  }
+}
+
+/* Pour les téléphones en mode portrait */
+@media (max-width: 576px) and (orientation: portrait) {
+  .choix-container {
+    justify-content: flex-start;
+    padding-top: 30px;
+  }
+  
+  .bouton-grand {
+    min-height: 160px;
+  }
+  
+  .bouton-icon {
+    width: 45px;
+    height: 45px;
+  }
+}
+
+/* Pour les très petits écrans */
+@media (max-width: 360px) {
+  .choix-container {
+    padding: 10px;
+  }
+  
+  .bouton-grand {
+    min-width: 100%;
+    min-height: 150px;
+    padding: 15px;
+  }
+  
+  .bouton-titre {
+    font-size: 1.3rem;
+  }
+  
+  .bouton-description {
+    font-size: 0.85rem;
+  }
+}
+
+/* Animation de chargement (optionnelle) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.bouton-grand {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.bouton-grand:nth-child(2) {
+  animation-delay: 0.1s;
+}

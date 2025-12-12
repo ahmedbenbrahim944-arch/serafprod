@@ -1443,6 +1443,14 @@ async onCheckMatricule() {
     this.checkingMatricule.set(false);
   }
 }
+// Méthode pour générer la liste des semaines
+getWeeksList(): string[] {
+  const weeks = [];
+  for (let i = 1; i <= 52; i++) {
+    weeks.push(`semaine${i}`);
+  }
+  return weeks;
+}
 
 // Méthode pour suggérer un autre matricule
 suggestDifferentMatricule() {

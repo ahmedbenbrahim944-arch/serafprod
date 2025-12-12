@@ -1,0 +1,39 @@
+<div class="choix-container">
+  <h1 class="titre">Choisissez une option</h1>
+  <p class="description">Sélectionnez l'une des options ci-dessous pour accéder aux différentes fonctionnalités</p>
+  
+  <div class="boutons-container">
+    <!-- Bouton Statistique avec RouterLink -->
+    <a class="bouton-grand statistique" 
+       routerLink="/stat" 
+       routerLinkActive="active" 
+       >
+      <div class="bouton-content">
+        <svg class="bouton-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 20V10"/>
+          <path d="M12 20V4"/>
+          <path d="M6 20v-6"/>
+        </svg>
+        <span class="bouton-titre">Statistique</span>
+        <span class="bouton-description">Visualisez et analysez vos données et performances</span>
+      </div>
+    </a>
+    
+    <!-- Bouton Planning avec RouterLink -->
+    <a class="bouton-grand planning" 
+       routerLink="/prod2" 
+       routerLinkActive="active"
+       >
+      <div class="bouton-content">
+        <svg class="bouton-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span class="bouton-titre">Planning</span>
+        <span class="bouton-description">Gérez votre agenda et vos rendez-vous</span>
+      </div>
+    </a>
+  </div>
+</div>

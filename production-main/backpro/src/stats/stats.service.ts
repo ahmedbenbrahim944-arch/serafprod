@@ -261,4 +261,95 @@ export class StatsService {
     // Logique pour récupérer toutes les statistiques
     // (à implémenter si nécessaire)
   }
+  // Modifications dans stats.service.ts
+// Ajoutez cette méthode à la fin de la classe StatsService :
+
+async getPcsProdTotalParLigne(semaine: string) {
+  console.log(`=== CALCUL PCS PROD TOTAL PAR LIGNE POUR ${semaine} ===`);
+
+  // 1. Récupérer toutes les planifications pour cette semaine
+  const planifications = await this.planificationRepository.find({
+    where: { 
+      semaine: semaine
+    },
+    relations: ['nonConformites'],
+    order: { ligne: 'ASC', jour: 'ASC', reference: 'ASC' }
+  });
+
+  if (planifications.length === 0) {
+    throw new NotFoundException(
+      `Aucune planification trouvée pour la semaine ${semaine}`
+    );
+  }
+
+  // 2. Grouper par ligne
+  const statsParLigne: Record<string, any> = {};
+
+  // 3. Parcourir toutes les planifications
+  for (const plan of planifications) {
+    const quantiteSource = this.getQuantitySource(plan);
+    const ligne = plan.ligne;
+    
+    // Initialiser la ligne si elle n'existe pas
+    if (!statsParLigne[ligne]) {
+      statsParLigne[ligne] = {
+        ligne: ligne,
+        totalQteSource: 0,
+        totalDecProduction: 0,
+        nombreReferences: new Set<string>(),
+        nombrePlanifications: 0,
+        detailsParReference: {}
+      };
+    }
+
+    // Mise à jour des totaux par ligne
+    const ligneStats = statsParLigne[ligne];
+    ligneStats.totalQteSource += quantiteSource;
+    ligneStats.totalDecProduction += plan.decProduction;
+    ligneStats.nombrePlanifications += 1;
+    ligneStats.nombreReferences.add(plan.reference);
+
+    // Détails par référence (optionnel)
+    if (!ligneStats.detailsParReference[plan.reference]) {
+      ligneStats.detailsParReference[plan.reference] = {
+        totalQteSource: 0,
+        totalDecProduction: 0
+      };
+    }
+    ligneStats.detailsParReference[plan.reference].totalQteSource += quantiteSource;
+    ligneStats.detailsParReference[plan.reference].totalDecProduction += plan.decProduction;
+  }
+
+  // 4. Formater la réponse
+  const resultat = Object.values(statsParLigne).map((ligne: any) => {
+    const pcsProdTotal = ligne.totalQteSource > 0 ? 
+      (ligne.totalDecProduction / ligne.totalQteSource) * 100 : 0;
+
+    return {
+      ligne: ligne.ligne,
+      nombrePlanifications: ligne.nombrePlanifications,
+      nombreReferences: ligne.nombreReferences.size,
+      totalQteSource: ligne.totalQteSource,
+      totalDecProduction: ligne.totalDecProduction,
+      pcsProdTotal: Math.round(pcsProdTotal * 100) / 100,
+      // Optionnel: ajouter les références avec leur pcsProd
+      references: Object.entries(ligne.detailsParReference).map(([ref, data]: [string, any]) => ({
+        reference: ref,
+        pcsProd: Math.round((data.totalDecProduction / data.totalQteSource) * 10000) / 100
+      }))
+    };
+  });
+
+  // 5. Trier par ligne (optionnel)
+  resultat.sort((a, b) => a.ligne.localeCompare(b.ligne));
+
+  console.log(`=== FIN PCS PROD TOTAL PAR LIGNE POUR ${semaine} ===`);
+  return {
+    message: `PCS Prod Total par ligne pour la semaine ${semaine}`,
+    semaine: semaine,
+    dateCalcul: new Date().toISOString(),
+    nombreLignes: resultat.length,
+    lignes: resultat
+  };
+}
 }
