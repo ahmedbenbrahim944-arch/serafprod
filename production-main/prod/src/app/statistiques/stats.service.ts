@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-
 export interface LigneStats {
   ligne: string;
   nombrePlanifications: number;
@@ -30,7 +29,7 @@ export interface StatsResponse {
   providedIn: 'root'
 })
 export class StatsService {
-  private apiUrl = `http://localhost:3000`;
+  private apiUrl = 'http://localhost:3000/stats';
 
   constructor(private http: HttpClient) {}
 
@@ -39,7 +38,8 @@ export class StatsService {
    */
   getPcsProdTotalParLigne(semaine: string): Observable<StatsResponse> {
     const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.getToken()}` // Ajouter le token JWT
     });
 
     // Utilisation de la route GET avec query params
@@ -54,7 +54,8 @@ export class StatsService {
    */
   getPcsProdTotalParLignePost(semaine: string): Observable<StatsResponse> {
     const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.getToken()}`
     });
 
     return this.http.post<StatsResponse>(`${this.apiUrl}/lignes`, 
@@ -68,12 +69,20 @@ export class StatsService {
    */
   getStatsBySemaineAndLigne(semaine: string, ligne: string): Observable<any> {
     const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.getToken()}`
     });
 
     return this.http.post<any>(this.apiUrl, 
       { semaine, ligne },
       { headers }
     );
+  }
+
+  /**
+   * Récupère le token JWT depuis le localStorage
+   */
+  private getToken(): string {
+    return localStorage.getItem('access_token') || '';
   }
 }

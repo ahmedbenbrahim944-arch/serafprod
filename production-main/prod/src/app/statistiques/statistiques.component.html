@@ -1,23 +1,37 @@
 <div class="stats-container">
-  <!-- Header avec sélection de semaine -->
+  <!-- Header avec sélection et bouton -->
   <div class="header">
     <h1>Statistiques de Production</h1>
-    <div class="week-selector">
-      <label for="semaine">Semaine:</label>
-      <select 
-        id="semaine" 
-        [(ngModel)]="semaineSelectionnee" 
-        (change)="chargerStatistiques()"
-        class="semaine-select">
-        <option value="semaine1">Semaine 1</option>
-        <option value="semaine2">Semaine 2</option>
-        <option value="semaine3">Semaine 3</option>
-        <option value="semaine4">Semaine 4</option>
-      </select>
+    <div class="controls">
+      <div class="week-selector">
+        <label for="semaine">Semaine:</label>
+        <select 
+          id="semaine" 
+          [(ngModel)]="semaineSelectionnee" 
+          class="semaine-select">
+          <option *ngFor="let num of getSemainesArray()" [value]="'semaine' + num">
+            Semaine {{ num }}
+          </option>
+        </select>
+      </div>
+      <button 
+        class="btn-charger" 
+        (click)="chargerStatistiques()"
+        [disabled]="isLoading">
+        <span *ngIf="!isLoading"> Afficher les Statistiques</span>
+        <span *ngIf="isLoading"> Chargement...</span>
+      </button>
     </div>
   </div>
 
-  <div class="content-wrapper">
+  <!-- Message de chargement -->
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement des statistiques...</p>
+  </div>
+
+  <!-- Contenu des statistiques -->
+  <div *ngIf="showStats && !isLoading" class="content-wrapper">
     <!-- Sidebar avec les lignes -->
     <div class="sidebar">
       <h2>Lignes de Production</h2>
@@ -29,7 +43,7 @@
           (click)="selectionnerLigne(ligne.ligne)">
           <div class="ligne-header">
             <span class="ligne-nom">{{ ligne.ligne }}</span>
-            <span class="ligne-percentage">{{ ligne.pcsProdTotal }}%</span>
+            <span class="ligne-percentage">{{ ligne.pcsProdTotal.toFixed(2) }}%</span>
           </div>
           <div class="ligne-bar-container">
             <div 
@@ -49,7 +63,7 @@
     <div class="charts-area">
       <!-- Histogramme -->
       <div class="chart-container">
-        <h3>Production par Ligne</h3>
+        <h3>Production par Ligne - {{ semaineSelectionnee }}</h3>
         <canvas id="barChart"></canvas>
       </div>
 
@@ -59,15 +73,22 @@
           *ngFor="let ligne of statsLignes" 
           class="pie-chart-wrapper">
           <h4>{{ ligne.ligne }}</h4>
-          <canvas [id]="'pieChart-' + ligne.ligne"></canvas>
-          <p class="pie-label">{{ ligne.pcsProdTotal }}%</p>
+          <div class="pie-canvas-wrapper">
+            <canvas [id]="'pieChart-' + ligne.ligne"></canvas>
+            <div class="pie-center-text">
+              <span class="percentage">{{ ligne.pcsProdTotal.toFixed(0) }}%</span>
+              <span class="label">rendement</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Message de chargement -->
-  <div *ngIf="isLoading" class="loading">
-    Chargement des statistiques...
+  <!-- Message initial -->
+  <div *ngIf="!showStats && !isLoading" class="welcome-message">
+    <div class="welcome-icon"></div>
+    <h2>Bienvenue aux Statistiques</h2>
+    <p>Sélectionnez une semaine et cliquez sur "Afficher les Statistiques" pour voir les données de production.</p>
   </div>
 </div>
