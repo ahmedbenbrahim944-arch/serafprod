@@ -639,7 +639,7 @@ private loadAvailableWeeks(): void {
     setTimeout(() => this.showSuccess.set(false), 3000);
   }
 
- updateDayEntry(reference: ReferenceProduction, day: string, field: string, value: any): void {
+updateDayEntry(reference: ReferenceProduction, day: string, field: string, value: any): void {
   if (this.weekPlanification()) {
     const updatedPlanif = { ...this.weekPlanification()! };
     const refIndex = updatedPlanif.references.findIndex(r => r.reference === reference.reference);

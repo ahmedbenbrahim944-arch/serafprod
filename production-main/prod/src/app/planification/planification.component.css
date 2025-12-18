@@ -397,7 +397,7 @@
 /* ==================== SIDEBAR DES SEMAINES ==================== */
 .weeks-sidebar {
   width: 220px;
-  background: #033b74;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   border-right: 1px solid #cbd5e1;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.03);
 }
@@ -413,7 +413,7 @@
 }
 
 .week-item:hover {
-  background: #0cd337;
+  background: #2e59aa;
   border-left-color: #0ea5e9;
   transform: translateX(2px);
   color: #0369a1;
@@ -436,10 +436,7 @@
   color: #94a3b8 !important;
 }
 
-.week-item .text-cyan-300 {
-  color: #10b981 !important;
-  font-weight: 600 !important;
-}
+
 
 /* Quand l'item est actif */
 .week-item.active .font-bold {

@@ -11,6 +11,8 @@ import { OuvrierService } from '../prod/ouvrier.service';
 import { PhaseService } from '../prod/phase.service';
 import { MatierePremierService } from '../prod2/matiere-premier.service';
 import { AuthService } from '../login/auth.service';
+import { HostListener } from '@angular/core';
+
 
 
 // Interfaces
@@ -2006,4 +2008,15 @@ getAverageOperatorsNumber(day: string): number {
   const value = this.getAverageOperators(day);
   return parseInt(value, 10) || 0;
 }
+
+// Dans la classe Prod2Component
+@HostListener('document:keydown.escape', ['$event'])
+handleEscapeKey(event: KeyboardEvent): void {
+  if (this.showCausesModal()) {
+    this.closeCausesModal();
+  }
 }
+}
+
+
+

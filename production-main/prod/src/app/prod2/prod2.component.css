@@ -38,10 +38,34 @@
 /* ==================== SIDEBAR RESPONSIVE ==================== */
 .weeks-sidebar {
   width: 220px;
-  background: #ffffff !important;
-  border-right: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-right: 1px solid #cbd5e1;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.03);
-  transition: transform 0.3s ease;
+}
+
+.week-item {
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 6px;
+  margin: 4px 8px;
+  font-weight: 500;
+}
+
+.week-item:hover {
+  background: #2e59aa;
+  border-left-color: #0ea5e9;
+  transform: translateX(2px);
+  color: #0369a1;
+}
+
+.week-item.active {
+  background: #0ea5e9;
+  border-left-color: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+  font-weight: 600;
 }
 
 /* Styles pour mobile/tablette */
