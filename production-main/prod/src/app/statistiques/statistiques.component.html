@@ -1,10 +1,18 @@
 <div class="stats-container">
-  <!-- Header avec sélection et bouton -->
+
+  <button class="btn-retour-choix" (click)="retourChoix()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Retour 
+  </button>
+  <!-- Header -->
   <div class="header">
     <h1>Statistiques de Production</h1>
+    
     <div class="controls">
       <div class="week-selector">
-        <label for="semaine">Semaine:</label>
+        <label for="semaine">Semaine :</label>
         <select 
           id="semaine" 
           [(ngModel)]="semaineSelectionnee" 
@@ -14,70 +22,76 @@
           </option>
         </select>
       </div>
+      
       <button 
         class="btn-charger" 
         (click)="chargerStatistiques()"
         [disabled]="isLoading">
-        <span *ngIf="!isLoading"> Afficher les Statistiques</span>
-        <span *ngIf="isLoading"> Chargement...</span>
+        <span *ngIf="!isLoading">Afficher les statistiques</span>
+        <span *ngIf="isLoading">Chargement...</span>
       </button>
     </div>
   </div>
 
-  <!-- Message de chargement -->
+  <!-- Loading -->
   <div *ngIf="isLoading" class="loading">
     <div class="spinner"></div>
-    <p>Chargement des statistiques...</p>
+    <p>Chargement des données...</p>
   </div>
 
-  <!-- Contenu des statistiques -->
-  <div *ngIf="showStats && !isLoading" class="content-wrapper">
-    <!-- Sidebar avec les lignes -->
-    <div class="sidebar">
-      <h2>Lignes de Production</h2>
+  <!-- Statistiques -->
+  <div *ngIf="showStats && !isLoading" class="stats-content">
+    
+    <!-- Lignes -->
+    <div class="lignes-section">
+      <h2>Lignes de production</h2>
       <div class="lignes-list">
         <div 
           *ngFor="let ligne of statsLignes" 
-          class="ligne-item"
+          class="ligne-card"
           [class.selected]="ligne.ligne === ligneSelectionnee"
           (click)="selectionnerLigne(ligne.ligne)">
+          
           <div class="ligne-header">
             <span class="ligne-nom">{{ ligne.ligne }}</span>
-            <span class="ligne-percentage">{{ ligne.pcsProdTotal.toFixed(2) }}%</span>
+            <span class="ligne-percentage">{{ ligne.pcsProdTotal.toFixed(1) }}%</span>
           </div>
-          <div class="ligne-bar-container">
+          
+          <div class="progress-bar">
             <div 
-              class="ligne-bar" 
+              class="progress-fill" 
               [style.width.%]="ligne.pcsProdTotal"
               [style.background-color]="getColorForPercentage(ligne.pcsProdTotal)">
             </div>
           </div>
-          <div class="ligne-info">
-            <small>Rendement</small>
+          
+          <div class="ligne-details">
+            <span>Planifications: {{ ligne.nombrePlanifications }}</span>
+            <span>Références: {{ ligne.nombreReferences }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Zone des graphiques -->
-    <div class="charts-area">
+    <!-- Graphiques -->
+    <div class="charts-section">
       <!-- Histogramme -->
-      <div class="chart-container">
-        <h3>Production par Ligne - {{ semaineSelectionnee }}</h3>
-        <canvas id="barChart"></canvas>
+      <div class="chart-card">
+        <h3>Production par ligne - {{ semaineSelectionnee }}</h3>
+        <div class="chart-wrapper">
+          <canvas id="barChart"></canvas>
+        </div>
       </div>
 
       <!-- Graphiques circulaires -->
-      <div class="pie-charts-container">
-        <div 
-          *ngFor="let ligne of statsLignes" 
-          class="pie-chart-wrapper">
+      <div class="pie-charts-grid">
+        <div *ngFor="let ligne of statsLignes" class="pie-card">
           <h4>{{ ligne.ligne }}</h4>
-          <div class="pie-canvas-wrapper">
+          <div class="pie-wrapper">
             <canvas [id]="'pieChart-' + ligne.ligne"></canvas>
-            <div class="pie-center-text">
+            <div class="pie-center">
               <span class="percentage">{{ ligne.pcsProdTotal.toFixed(0) }}%</span>
-              <span class="label">rendement</span>
+              <span class="label">Rendement</span>
             </div>
           </div>
         </div>
@@ -86,9 +100,9 @@
   </div>
 
   <!-- Message initial -->
-  <div *ngIf="!showStats && !isLoading" class="welcome-message">
+  <div *ngIf="!showStats && !isLoading" class="welcome-card">
     <div class="welcome-icon"></div>
-    <h2>Bienvenue aux Statistiques</h2>
-    <p>Sélectionnez une semaine et cliquez sur "Afficher les Statistiques" pour voir les données de production.</p>
+    <h2></h2>
+    <p></p>
   </div>
 </div>

@@ -1,6 +1,12 @@
 <div class="choix-container">
-  <h1 class="titre">Choisissez une option</h1>
-  <p class="description">Sélectionnez l'une des options ci-dessous pour accéder aux différentes fonctionnalités</p>
+  
+  <!-- Bouton de retour au login -->
+  <button class="btn-retour-login" (click)="retourLogin()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Retour au Login
+  </button>
   
   <div class="boutons-container">
     <!-- Bouton Statistique avec RouterLink -->
@@ -15,7 +21,7 @@
           <path d="M6 20v-6"/>
         </svg>
         <span class="bouton-titre">Statistique</span>
-        <span class="bouton-description">Visualisez et analysez vos données et performances</span>
+        <span class="bouton-description"></span>
       </div>
     </a>
     
@@ -32,7 +38,7 @@
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
         <span class="bouton-titre">Planning</span>
-        <span class="bouton-description">Gérez votre agenda et vos rendez-vous</span>
+        <span class="bouton-description"></span>
       </div>
     </a>
   </div>
