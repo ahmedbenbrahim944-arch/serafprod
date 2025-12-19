@@ -6,6 +6,7 @@ import { PlanificationComponent } from './planification/planification.component'
 import { Prod2Component } from './prod2/prod2.component';
 import { ChoixComponent } from './choix/choix.component';
 import { StatistiquesComponent } from './statistiques/statistiques.component';
+import { MagasinComponent } from './magasin/magasin.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'prod', component: ProdComponent },
   { path: 'choix', component: ChoixComponent },
   { path: 'stat', component: StatistiquesComponent },
+  { path: 'magasin', component: MagasinComponent }, // Ajout de la route pour MagasinComponent
   
   
 ];

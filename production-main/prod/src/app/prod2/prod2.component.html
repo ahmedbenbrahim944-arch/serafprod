@@ -261,7 +261,7 @@
                  'bg-cyan-600': getAverageOperatorsNumber(day) > 0,
                  'bg-gray-600': getAverageOperatorsNumber(day) === 0
                }">
-            <span class="text-xs font-bold text-white uppercase tracking-wider">NB OP</span>
+            <span class="text-xs  text-white uppercase tracking-wider">NB OP</span>
           </div>
           
           <!-- Mode édition : Input -->
@@ -296,26 +296,26 @@
   <ng-container *ngFor="let ref of filteredWeekPlanification()!.references">
     <!-- Ligne C -->
     <tr class="border-b border-gray-700/50">
-      <td class="sticky left-0 z-10 sticky-cell border-2 border-gray-700 font-semibold whitespace-nowrap px-2 sm:px-4 py-3 sm:py-4 text-sm sm:text-base" rowspan="5">
-        {{ ref.reference }}
-      </td>
-      <td class="text-center font-bold text-white border-2 border-gray-700 py-3 sm:py-4 text-sm sm:text-base">C</td>
-      <td class="text-center font-mono text-white border-2 border-gray-700 py-3 sm:py-4 vertical-text-cell" rowspan="5">
-        <div class="vertical-text-wrapper">
-          <ng-container *ngIf="getDayEntry(ref, 'lundi')">
-            <!-- OF - LECTURE SEULE -->
-            <span class="vertical-text-value">{{ getDayEntry(ref, 'lundi')!.of }}</span>
-          </ng-container>
-        </div>
-      </td>
-      <ng-container *ngFor="let day of weekDays">
-        <td class="text-center border-2 border-gray-700 py-3 sm:py-4">
-          <!-- C - LECTURE SEULE -->
-          <span class="text-white font-bold text-base sm:text-lg value-display">{{ getDayEntry(ref, day)!.c }}</span>
-          <span *ngIf="!getDayEntry(ref, day)" class="text-gray-500 text-sm sm:text-base">-</span>
-        </td>
+  <td class="sticky left-0 z-10 sticky-cell border-2 border-gray-700 font-semibold whitespace-nowrap px-2 sm:px-4 py-3 sm:py-4 text-sm sm:text-base" rowspan="5">
+    {{ ref.reference }}
+  </td>
+  <td class="text-center font-bold text-blue-700 border-2 border-gray-700 py-3 sm:py-4 text-sm sm:text-base bg-blue-100">C</td> <!-- Ajout de bg-blue-100 -->
+  <td class="text-center font-mono text-white border-2 border-gray-700 py-3 sm:py-4 vertical-text-cell" rowspan="5">
+    <div class="vertical-text-wrapper">
+      <ng-container *ngIf="getDayEntry(ref, 'lundi')">
+        <!-- OF - LECTURE SEULE -->
+        <span class="vertical-text-value">{{ getDayEntry(ref, 'lundi')!.of }}</span>
       </ng-container>
-    </tr>
+    </div>
+  </td>
+  <ng-container *ngFor="let day of weekDays">
+    <td class="text-center border-2 border-gray-700 py-3 sm:py-4">
+      <!-- C - LECTURE SEULE -->
+      <span class="text-white font-bold text-base sm:text-lg value-display">{{ getDayEntry(ref, day)!.c }}</span>
+      <span *ngIf="!getDayEntry(ref, day)" class="text-gray-500 text-sm sm:text-base">-</span>
+    </td>
+  </ng-container>
+</tr>
     
     <!-- Ligne M - MODIFIABLE -->
     <tr class="border-b border-gray-700/50">

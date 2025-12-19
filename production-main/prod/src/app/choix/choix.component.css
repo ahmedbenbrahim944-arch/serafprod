@@ -340,3 +340,16 @@
     height: 16px;
   }
 }
+/* Bouton Magasin */
+.bouton-grand.magasin {
+  background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+  color: white;
+}
+
+.bouton-grand.magasin .bouton-icon {
+  stroke: #ffe4d6;
+}
+
+.bouton-grand.magasin:hover {
+  background: linear-gradient(135deg, #ff8f6f 0%, #ffc49b 100%);
+}

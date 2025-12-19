@@ -1120,3 +1120,17 @@
     align-items: center;
   }
 }
+/* ==================== TOUS LES CHAMPS C EN BLEU ==================== */
+
+
+.week-planning-table tbody tr:nth-child(5n+1) td:not(.sticky-cell) {
+    background: #2a77dd !important;
+    border-top: 1px solid #033164 !important;
+    border-bottom: 1px solid #93c5fd !important;
+    border-left: 1px solid #93c5fd !important;
+    border-right: 1px solid #93c5fd !important;
+}
+.week-planning-table tbody tr:nth-child(5n+1) td:not(.sticky-cell) .value-display {
+    color: #0d0d0e !important;
+    font-weight: 900 !important;
+}

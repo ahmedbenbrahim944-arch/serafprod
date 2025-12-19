@@ -16,6 +16,7 @@ import { MatierePremierModule } from './matiere-premier/matiere-premier.module';
 import { SaisieRapportModule } from './saisie-rapport/saisie-rapport.module';
 import { NonConfModule } from './non-conf/non-conf.module';
 import { StatsModule } from './stats/stats.module';
+import { MagasinModule } from './magasin/magasin.module';
 
 @Module({
   imports: [
@@ -43,7 +44,9 @@ import { StatsModule } from './stats/stats.module';
     MatierePremierModule,
     SaisieRapportModule,
     NonConfModule,
-    StatsModule
+    StatsModule,
+    MagasinModule,
+
   ],
   controllers: [],
   providers: [],
