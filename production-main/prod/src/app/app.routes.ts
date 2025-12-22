@@ -9,7 +9,7 @@ import { StatistiquesComponent } from './statistiques/statistiques.component';
 import { MagasinComponent } from './magasin/magasin.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '', redirectTo: '/choix', pathMatch: 'full' },
   { path: 'planification', component: PlanificationComponent },
   { path: 'prod2', component: Prod2Component },
   { path: 'login', component: LoginComponent },

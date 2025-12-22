@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { StatsService } from './stats.service';
+import { StatsService, Pourcentage5MResponse } from './stats.service';
 import { Chart, registerables } from 'chart.js';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
 Chart.register(...registerables);
 
@@ -16,6 +17,14 @@ interface LigneStats {
   totalDecProduction: number;
 }
 
+interface Stats5M {
+  matierePremiere: number;
+  absence: number;
+  rendement: number;
+  maintenance: number;
+  qualite: number;
+}
+
 @Component({
   selector: 'app-statistiques',
   standalone: true,
@@ -26,15 +35,24 @@ interface LigneStats {
 export class StatistiquesComponent implements OnInit, OnDestroy {
   semaineSelectionnee: string = 'semaine1';
   statsLignes: LigneStats[] = [];
+  stats5M: Stats5M | null = null;
   ligneSelectionnee: string | null = null;
   isLoading: boolean = false;
   showStats: boolean = false;
 
   private barChart: Chart | null = null;
-  private pieCharts: Map<string, Chart> = new Map();
+  private pieCharts5M: Map<string, Chart> = new Map();
 
-  constructor(private statsService: StatsService ,  private router: Router) {}
-  
+  // Couleurs pour les 5M
+  private readonly couleurs5M = {
+    matierePremiere: '#ef4444',  // Rouge
+    absence: '#f59e0b',          // Orange
+    rendement: '#10b981',        // Vert
+    maintenance: '#3b82f6',      // Bleu
+    qualite: '#8b5cf6'           // Violet
+  };
+
+  constructor(private statsService: StatsService, private router: Router) {}
 
   ngOnInit(): void {
     // Ne pas charger automatiquement
@@ -57,9 +75,24 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.showStats = false;
     
-    this.statsService.getPcsProdTotalParLigne(this.semaineSelectionnee).subscribe({
+    // Charger les deux APIs en parallèle
+    forkJoin({
+      lignes: this.statsService.getPcsProdTotalParLigne(this.semaineSelectionnee),
+      pourcentage5M: this.statsService.getPourcentage5MParSemaine(this.semaineSelectionnee)
+    }).subscribe({
       next: (response) => {
-        this.statsLignes = response.lignes;
+        this.statsLignes = response.lignes.lignes;
+        
+        // Extraire les pourcentages dans le total 5M
+        const causes = response.pourcentage5M.pourcentagesParCause;
+        this.stats5M = {
+          matierePremiere: causes.matierePremiere.pourcentageDansTotal5MNumber,
+          absence: causes.absence.pourcentageDansTotal5MNumber,
+          rendement: causes.rendement.pourcentageDansTotal5MNumber,
+          maintenance: causes.maintenance.pourcentageDansTotal5MNumber,
+          qualite: causes.qualite.pourcentageDansTotal5MNumber
+        };
+
         this.isLoading = false;
         this.showStats = true;
         
@@ -70,7 +103,7 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Erreur:', error);
         this.isLoading = false;
-        alert('Erreur lors du chargement');
+        alert('Erreur lors du chargement des statistiques');
       }
     });
   }
@@ -80,110 +113,62 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
       this.barChart.destroy();
       this.barChart = null;
     }
-    this.pieCharts.forEach(chart => chart.destroy());
-    this.pieCharts.clear();
+    this.pieCharts5M.forEach(chart => chart.destroy());
+    this.pieCharts5M.clear();
   }
 
   creerGraphiques(): void {
     this.destroyAllCharts();
     this.creerHistogramme();
-    this.creerGraphiquesCirculaires();
+    this.creerGraphiquesCirculaires5M();
   }
 
- creerHistogramme(): void {
-  const ctx = document.getElementById('barChart') as HTMLCanvasElement;
-  if (!ctx) return;
-
-  const labels = this.statsLignes.map(l => l.ligne);
-  const data = this.statsLignes.map(l => l.pcsProdTotal);
-  
-  // Couleurs en fonction du rendement (vert pour haut, orange/rouge pour bas)
-  const colors = data.map(value => {
-    if (value >= 75) return '#10b981'; // Vert foncé
-    if (value >= 50) return '#22c55e'; // Vert
-    if (value >= 25) return '#f59e0b'; // Orange
-    return '#ef4444'; // Rouge
-  });
-
-  this.barChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Rendement (%)',
-        data: data,
-        backgroundColor: colors,
-        borderColor: colors.map(c => this.darkenColor(c)),
-        borderWidth: 1,
-        borderRadius: 4
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100,
-          title: {
-            display: true,
-            text: 'Rendement (%)'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Lignes de production'
-          }
-        }
-      },
-      plugins: {
-        legend: {
-          display: false
-        }
-      }
-    }
-  });
-}
-
-// Méthode utilitaire pour assombrir une couleur
-private darkenColor(color: string): string {
-  const colors: {[key: string]: string} = {
-    '#10b981': '#0da271', // Vert foncé assombri
-    '#22c55e': '#1aa152', // Vert assombri
-    '#f59e0b': '#d6880a', // Orange assombri
-    '#ef4444': '#d33838'  // Rouge assombri
-  };
-  return colors[color] || '#374151';
-}
-
- creerGraphiquesCirculaires(): void {
-  this.statsLignes.forEach(ligne => {
-    const canvasId = `pieChart-${ligne.ligne}`;
-    const ctx = document.getElementById(canvasId) as HTMLCanvasElement;
-    
+  creerHistogramme(): void {
+    const ctx = document.getElementById('barChart') as HTMLCanvasElement;
     if (!ctx) return;
 
-    const rendement = ligne.pcsProdTotal;
-    const ecart = 100 - rendement;
+    const labels = this.statsLignes.map(l => l.ligne);
+    const data = this.statsLignes.map(l => l.pcsProdTotal);
+    
+    const colors = data.map(value => {
+      if (value >= 75) return '#10b981';
+      if (value >= 50) return '#22c55e';
+      if (value >= 25) return '#f59e0b';
+      return '#ef4444';
+    });
 
-    const chart = new Chart(ctx, {
-      type: 'doughnut',
+    this.barChart = new Chart(ctx, {
+      type: 'bar',
       data: {
-        labels: ['Rendement', 'Écart'],
+        labels: labels,
         datasets: [{
-          data: [rendement, ecart],
-          backgroundColor: [
-            '#10b981', // Vert pour le rendement
-            '#ef4444'  // Rouge pour l'écart
-          ],
-          borderWidth: 0
+          label: 'Rendement (%)',
+          data: data,
+          backgroundColor: colors,
+          borderColor: colors.map(c => this.darkenColor(c)),
+          borderWidth: 1,
+          borderRadius: 4
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '75%',
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: {
+              display: true,
+              text: 'Rendement (%)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Lignes de production'
+            }
+          }
+        },
         plugins: {
           legend: {
             display: false
@@ -191,23 +176,87 @@ private darkenColor(color: string): string {
         }
       }
     });
+  }
 
-    this.pieCharts.set(ligne.ligne, chart);
-  });
-}
+  private darkenColor(color: string): string {
+    const colors: {[key: string]: string} = {
+      '#10b981': '#0da271',
+      '#22c55e': '#1aa152',
+      '#f59e0b': '#d6880a',
+      '#ef4444': '#d33838'
+    };
+    return colors[color] || '#374151';
+  }
+
+  creerGraphiquesCirculaires5M(): void {
+    if (!this.stats5M) return;
+
+    const causes5M = [
+      { nom: 'matierePremiere', valeur: this.stats5M.matierePremiere },
+      { nom: 'absence', valeur: this.stats5M.absence },
+      { nom: 'rendement', valeur: this.stats5M.rendement },
+      { nom: 'maintenance', valeur: this.stats5M.maintenance },
+      { nom: 'qualite', valeur: this.stats5M.qualite }
+    ];
+
+    causes5M.forEach((cause) => {
+      const canvasId = `pieChart-${cause.nom}`;
+      const ctx = document.getElementById(canvasId) as HTMLCanvasElement;
+      
+      if (!ctx) return;
+
+      const valeur = cause.valeur;
+      const reste = 100 - valeur;
+      const couleur = this.couleurs5M[cause.nom as keyof typeof this.couleurs5M];
+
+      const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Pourcentage', 'Reste'],
+          datasets: [{
+            data: [valeur, reste],
+            backgroundColor: [
+              couleur,
+              '#e5e7eb'  // Gris clair pour le reste
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          cutout: '70%',
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.parsed.toFixed(1) + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+
+      this.pieCharts5M.set(cause.nom, chart);
+    });
+  }
 
   selectionnerLigne(ligne: string): void {
     this.ligneSelectionnee = ligne;
-    // Logique supplémentaire si nécessaire
   }
 
   getColorForPercentage(percentage: number): string {
-    if (percentage >= 75) return '#10b981'; // Vert
-    if (percentage >= 50) return '#3b82f6'; // Bleu
-    if (percentage >= 25) return '#f59e0b'; // Orange
-    return '#ef4444'; // Rouge
+    if (percentage >= 75) return '#10b981';
+    if (percentage >= 50) return '#3b82f6';
+    if (percentage >= 25) return '#f59e0b';
+    return '#ef4444';
   }
-   retourChoix() {
+
+  retourChoix(): void {
     this.router.navigate(['/choix']);
   }
 }

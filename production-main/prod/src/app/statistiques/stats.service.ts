@@ -25,6 +25,42 @@ export interface StatsResponse {
   lignes: LigneStats[];
 }
 
+export interface Pourcentage5MCause {
+  total: number;
+  pourcentage: string;
+  pourcentageNumber: number;
+  pourcentageDansTotal5M: string;
+  pourcentageDansTotal5MNumber: number;
+}
+
+export interface Pourcentage5MResponse {
+  message: string;
+  periode: {
+    semaine: string;
+    dateCalcul: string;
+    nombrePlanifications: number;
+  };
+  resume: {
+    totalQuantitePlanifiee: number;
+    total5M: number;
+    pourcentageTotal5M: string;
+    pourcentageTotal5MNumber: number;
+  };
+  pourcentagesParCause: {
+    matierePremiere: Pourcentage5MCause;
+    absence: Pourcentage5MCause;
+    rendement: Pourcentage5MCause;
+    maintenance: Pourcentage5MCause;
+    qualite: Pourcentage5MCause;
+  };
+  resumeTableau: Array<{
+    cause: string;
+    total: number;
+    pourcentage: number;
+    pourcentageDans5M: number;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -39,10 +75,9 @@ export class StatsService {
   getPcsProdTotalParLigne(semaine: string): Observable<StatsResponse> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.getToken()}` // Ajouter le token JWT
+      'Authorization': `Bearer ${this.getToken()}`
     });
 
-    // Utilisation de la route GET avec query params
     return this.http.get<StatsResponse>(`${this.apiUrl}/lignes`, {
       params: { semaine },
       headers
@@ -75,6 +110,36 @@ export class StatsService {
 
     return this.http.post<any>(this.apiUrl, 
       { semaine, ligne },
+      { headers }
+    );
+  }
+
+  /**
+   * Récupère les pourcentages des 5M pour une semaine donnée
+   */
+  getPourcentage5MParSemaine(semaine: string): Observable<Pourcentage5MResponse> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.getToken()}`
+    });
+
+    return this.http.get<Pourcentage5MResponse>(`${this.apiUrl}/pourcentage-5m`, {
+      params: { semaine },
+      headers
+    });
+  }
+
+  /**
+   * Alternative: Utilisation de la route POST pour les pourcentages 5M
+   */
+  getPourcentage5MParSemainePost(semaine: string): Observable<Pourcentage5MResponse> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.getToken()}`
+    });
+
+    return this.http.post<Pourcentage5MResponse>(`${this.apiUrl}/pourcentage-5m`, 
+      { semaine },
       { headers }
     );
   }

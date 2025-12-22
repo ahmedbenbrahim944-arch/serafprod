@@ -15,6 +15,7 @@ import { StatsService } from './stats.service';
 import { GetStatsDto } from './dto/get-stats.dto';
 import { GetStatsLignesDto } from './dto/get-stats-lignes.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GetStatsSemaineDto } from './dto/get-stats-semaine.dto';
 
 @Controller('stats')
 export class StatsController {
@@ -45,4 +46,19 @@ export class StatsController {
   async getPcsProdTotalParLigneQuery(@Query('semaine') semaine: string) {
     return this.statsService.getPcsProdTotalParLigne(semaine);
   }
+  @Post('pourcentage-5m')
+@UseGuards(JwtAuthGuard)
+@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+@HttpCode(HttpStatus.OK)
+async getPourcentage5MParSemaine(@Body() getStatsSemaineDto: GetStatsSemaineDto) {
+  const { semaine } = getStatsSemaineDto;
+  return this.statsService.getStatsPourcentage5MParSemaine(semaine);
+}
+
+// Option: Version GET avec query param
+@Get('pourcentage-5m')
+@UseGuards(JwtAuthGuard)
+async getPourcentage5MParSemaineQuery(@Query('semaine') semaine: string) {
+  return this.statsService.getStatsPourcentage5MParSemaine(semaine);
+}
 }

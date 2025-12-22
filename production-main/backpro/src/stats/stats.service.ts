@@ -1,5 +1,5 @@
 // src/stats/stats.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException,InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Planification } from '../semaine/entities/planification.entity';
@@ -351,5 +351,192 @@ async getPcsProdTotalParLigne(semaine: string) {
     nombreLignes: resultat.length,
     lignes: resultat
   };
+}
+async getStatsPourcentage5MParSemaine(semaine: string) {
+  console.log(`=== CALCUL POURCENTAGE 5M POUR SEMAINE ${semaine} ===`);
+
+  try {
+    // 1. Récupérer toutes les planifications de la semaine
+    const planifications = await this.planificationRepository.find({
+      where: { semaine: semaine },
+      relations: ['nonConformites']
+    });
+
+    if (planifications.length === 0) {
+      throw new NotFoundException(
+        `Aucune planification trouvée pour la semaine ${semaine}`
+      );
+    }
+
+    // 2. Calculer la quantité totale planifiée
+    let totalQuantitePlanifiee = 0;
+    
+    // 3. Initialiser les totaux pour chaque cause 5M
+    let totalMatierePremiere = 0;
+    let totalAbsence = 0;
+    let totalRendement = 0;
+    let totalMaintenance = 0;
+    let totalQualite = 0;
+    let total5M = 0;
+
+    // 4. Parcourir toutes les planifications
+    for (const plan of planifications) {
+      // Quantité source pour cette planification
+      const quantiteSource = this.getQuantitySource(plan);
+      totalQuantitePlanifiee += quantiteSource;
+
+      // Vérifier s'il y a des non-conformités
+      if (plan.nonConformites && plan.nonConformites.length > 0) {
+        const nonConf = plan.nonConformites[0]; // Normalement une seule
+        
+        // Ajouter aux totaux par cause
+        totalMatierePremiere += nonConf.matierePremiere;
+        totalAbsence += nonConf.absence;
+        totalRendement += nonConf.rendement;
+        totalMaintenance += nonConf.maintenance;
+        totalQualite += nonConf.qualite;
+        
+        // Total 5M
+        total5M += nonConf.total;
+      }
+    }
+
+    console.log('Totaux calculés:', {
+      totalQuantitePlanifiee,
+      totalMatierePremiere,
+      totalAbsence,
+      totalRendement,
+      totalMaintenance,
+      totalQualite,
+      total5M
+    });
+
+    // 5. Calculer les pourcentages
+    const calculerPourcentage = (totalCause: number): number => {
+      if (totalQuantitePlanifiee <= 0) return 0;
+      const pourcentage = (totalCause / totalQuantitePlanifiee) * 100;
+      return Math.round(pourcentage * 10) / 10; // Une décimale
+    };
+
+    const pourcentageMatierePremiere = calculerPourcentage(totalMatierePremiere);
+    const pourcentageAbsence = calculerPourcentage(totalAbsence);
+    const pourcentageRendement = calculerPourcentage(totalRendement);
+    const pourcentageMaintenance = calculerPourcentage(totalMaintenance);
+    const pourcentageQualite = calculerPourcentage(totalQualite);
+    const pourcentageTotal5M = calculerPourcentage(total5M);
+
+    // 6. Calculer la répartition des 5M (pourcentage de chaque cause dans le total 5M)
+    const calculerPourcentageDans5M = (totalCause: number): number => {
+      if (total5M <= 0) return 0;
+      const pourcentage = (totalCause / total5M) * 100;
+      return Math.round(pourcentage * 10) / 10; // Une décimale
+    };
+
+    const pourcentageDans5MMatierePremiere = calculerPourcentageDans5M(totalMatierePremiere);
+    const pourcentageDans5MAbsence = calculerPourcentageDans5M(totalAbsence);
+    const pourcentageDans5MRendement = calculerPourcentageDans5M(totalRendement);
+    const pourcentageDans5MMaintenance = calculerPourcentageDans5M(totalMaintenance);
+    const pourcentageDans5MQualite = calculerPourcentageDans5M(totalQualite);
+
+    // 7. Préparer la réponse
+    const response = {
+      message: `Pourcentages des 5M pour la semaine ${semaine}`,
+      periode: {
+        semaine: semaine,
+        dateCalcul: new Date().toISOString(),
+        nombrePlanifications: planifications.length
+      },
+      resume: {
+        totalQuantitePlanifiee: totalQuantitePlanifiee,
+        total5M: total5M,
+        pourcentageTotal5M: `${pourcentageTotal5M}%`,
+        pourcentageTotal5MNumber: pourcentageTotal5M
+      },
+      pourcentagesParCause: {
+        matierePremiere: {
+          total: totalMatierePremiere,
+          pourcentage: `${pourcentageMatierePremiere}%`,
+          pourcentageNumber: pourcentageMatierePremiere,
+          pourcentageDansTotal5M: `${pourcentageDans5MMatierePremiere}%`,
+          pourcentageDansTotal5MNumber: pourcentageDans5MMatierePremiere
+        },
+        absence: {
+          total: totalAbsence,
+          pourcentage: `${pourcentageAbsence}%`,
+          pourcentageNumber: pourcentageAbsence,
+          pourcentageDansTotal5M: `${pourcentageDans5MAbsence}%`,
+          pourcentageDansTotal5MNumber: pourcentageDans5MAbsence
+        },
+        rendement: {
+          total: totalRendement,
+          pourcentage: `${pourcentageRendement}%`,
+          pourcentageNumber: pourcentageRendement,
+          pourcentageDansTotal5M: `${pourcentageDans5MRendement}%`,
+          pourcentageDansTotal5MNumber: pourcentageDans5MRendement
+        },
+        maintenance: {
+          total: totalMaintenance,
+          pourcentage: `${pourcentageMaintenance}%`,
+          pourcentageNumber: pourcentageMaintenance,
+          pourcentageDansTotal5M: `${pourcentageDans5MMaintenance}%`,
+          pourcentageDansTotal5MNumber: pourcentageDans5MMaintenance
+        },
+        qualite: {
+          total: totalQualite,
+          pourcentage: `${pourcentageQualite}%`,
+          pourcentageNumber: pourcentageQualite,
+          pourcentageDansTotal5M: `${pourcentageDans5MQualite}%`,
+          pourcentageDansTotal5MNumber: pourcentageDans5MQualite
+        }
+      },
+      // Optionnel: Résumé en tableau pour faciliter l'affichage
+      resumeTableau: [
+        {
+          cause: 'Matière Première',
+          total: totalMatierePremiere,
+          pourcentage: pourcentageMatierePremiere,
+          pourcentageDans5M: pourcentageDans5MMatierePremiere
+        },
+        {
+          cause: 'Absence',
+          total: totalAbsence,
+          pourcentage: pourcentageAbsence,
+          pourcentageDans5M: pourcentageDans5MAbsence
+        },
+        {
+          cause: 'Rendement',
+          total: totalRendement,
+          pourcentage: pourcentageRendement,
+          pourcentageDans5M: pourcentageDans5MRendement
+        },
+        {
+          cause: 'Maintenance',
+          total: totalMaintenance,
+          pourcentage: pourcentageMaintenance,
+          pourcentageDans5M: pourcentageDans5MMaintenance
+        },
+        {
+          cause: 'Qualité',
+          total: totalQualite,
+          pourcentage: pourcentageQualite,
+          pourcentageDans5M: pourcentageDans5MQualite
+        }
+      ]
+    };
+
+    console.log(`=== FIN POURCENTAGE 5M POUR SEMAINE ${semaine} ===`);
+    return response;
+
+  } catch (error) {
+    console.error(`Erreur dans getStatsPourcentage5MParSemaine:`, error);
+    
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+    
+    throw new InternalServerErrorException(
+      `Erreur lors du calcul des pourcentages 5M: ${error.message}`
+    );
+  }
 }
 }

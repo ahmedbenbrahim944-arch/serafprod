@@ -71,7 +71,7 @@ export class SemaineService {
           planification.reference = product.reference;
           planification.of = '';
           planification.qtePlanifiee = 0;
-          planification.qteModifiee = 0; // Initialiser à 0
+          planification.qteModifiee = 0;
           planification.emballage = '200';
           planification.nbOperateurs = 0;
           planification.nbHeuresPlanifiees = 0;
@@ -343,7 +343,7 @@ export class SemaineService {
     };
   }
 
-  // ==================== NOUVEL ENDPOINT : RÉSUMÉ PAR LIGNE ====================
+  // ==================== ENDPOINT : RÉSUMÉ PAR LIGNE (FILTRÉ) ====================
   async getPlanificationsVuProd(semaine: string, ligne: string) {
     console.log(`=== RÉSUMÉ POUR ${ligne} - ${semaine} ===`);
 
@@ -356,8 +356,8 @@ export class SemaineService {
       throw new NotFoundException(`Semaine "${semaine}" non trouvée`);
     }
 
-    // Récupérer toutes les planifications pour cette ligne et semaine
-    const planifications = await this.planificationRepository.find({
+    // Récupérer TOUTES les planifications (pour les totaux)
+    const toutesLesPlanifications = await this.planificationRepository.find({
       where: { 
         semaine: semaine,
         ligne: ligne
@@ -365,13 +365,14 @@ export class SemaineService {
       order: { jour: 'ASC', reference: 'ASC' }
     });
 
-    if (planifications.length === 0) {
+    if (toutesLesPlanifications.length === 0) {
       return {
         message: `Aucune planification trouvée pour la ligne ${ligne} dans la semaine ${semaine}`,
         semaine: semaine,
         ligne: ligne,
         stats: {
           totalPlanifications: 0,
+          planificationsAffichees: 0,
           totalQtePlanifiee: 0,
           totalQteModifiee: 0,
           totalDecProduction: 0,
@@ -383,10 +384,13 @@ export class SemaineService {
       };
     }
 
-    // CALCULER LES TOTAUX
+    // FILTRER les planifications à afficher (qtePlanifiee > 0)
+    const planificationsAffichees = toutesLesPlanifications.filter(plan => plan.qtePlanifiee > 0);
+
+    // CALCULER LES TOTAUX (sur TOUTES les planifications)
     let totalQtePlanifiee = 0;
     let totalQteModifiee = 0;
-    let totalQteSource = 0; // qteModifiee si existe, sinon qtePlanifiee
+    let totalQteSource = 0;
     let totalDecProduction = 0;
     let totalDecMagasin = 0;
     let totalDeltaProd = 0;
@@ -407,8 +411,8 @@ export class SemaineService {
       };
     });
 
-    // Parcourir toutes les planifications
-    for (const plan of planifications) {
+    // Parcourir TOUTES les planifications pour les totaux
+    for (const plan of toutesLesPlanifications) {
       const quantiteSource = this.getQuantitySource(plan);
       
       // Totaux généraux
@@ -419,7 +423,7 @@ export class SemaineService {
       totalDecMagasin += plan.decMagasin;
       totalDeltaProd += plan.deltaProd;
 
-      // Détails par jour
+      // Détails par jour (TOUS)
       if (detailsParJour[plan.jour]) {
         detailsParJour[plan.jour].qtePlanifiee += plan.qtePlanifiee;
         detailsParJour[plan.jour].qteModifiee += plan.qteModifiee;
@@ -427,18 +431,20 @@ export class SemaineService {
         detailsParJour[plan.jour].decProduction += plan.decProduction;
         detailsParJour[plan.jour].deltaProd += plan.deltaProd;
         
-        // Ajouter la référence au jour
-        detailsParJour[plan.jour].references.push({
-          reference: plan.reference,
-          of: plan.of,
-          qtePlanifiee: plan.qtePlanifiee,
-          qteModifiee: plan.qteModifiee,
-          quantiteSource: quantiteSource,
-          decProduction: plan.decProduction,
-          deltaProd: plan.deltaProd,
-          pcsProd: `${plan.pcsProd}%`,
-          nbOperateurs: plan.nbOperateurs
-        });
+        // Ajouter la référence au jour SEULEMENT SI qtePlanifiee > 0
+        if (plan.qtePlanifiee > 0) {
+          detailsParJour[plan.jour].references.push({
+            reference: plan.reference,
+            of: plan.of,
+            qtePlanifiee: plan.qtePlanifiee,
+            qteModifiee: plan.qteModifiee,
+            quantiteSource: quantiteSource,
+            decProduction: plan.decProduction,
+            deltaProd: plan.deltaProd,
+            pcsProd: `${plan.pcsProd}%`,
+            nbOperateurs: plan.nbOperateurs
+          });
+        }
       }
     }
 
@@ -464,7 +470,8 @@ export class SemaineService {
       },
       ligne: ligne,
       stats: {
-        totalPlanifications: planifications.length,
+        totalPlanifications: toutesLesPlanifications.length, // TOUTES les planifications
+        planificationsAffichees: planificationsAffichees.length, // Celles avec qtePlanifiee > 0
         totalQtePlanifiee: totalQtePlanifiee,
         totalQteModifiee: totalQteModifiee,
         totalQteSource: totalQteSource,
@@ -474,7 +481,7 @@ export class SemaineService {
         pcsProdTotal: Math.round(pcsProdTotal * 100) / 100,
         detailsParJour: detailsParJour
       },
-      planifications: planifications.map(plan => ({
+      planifications: planificationsAffichees.map(plan => ({
         id: plan.id,
         jour: plan.jour,
         reference: plan.reference,
@@ -493,7 +500,59 @@ export class SemaineService {
     };
   }
 
-  // ==================== MÉTHODES EXISTANTES (simplifiées) ====================
+  // ==================== VUE UTILISATEUR (FILTRÉ) ====================
+  async getPlanificationsView(getPlanificationsViewDto: GetPlanificationsViewDto) {
+    const { semaine } = getPlanificationsViewDto;
+
+    const semaineEntity = await this.semaineRepository.findOne({
+      where: { nom: semaine }
+    });
+
+    if (!semaineEntity) {
+      throw new NotFoundException(`Semaine "${semaine}" non trouvée`);
+    }
+
+    // Récupérer TOUTES les planifications
+    const toutesLesPlanifications = await this.planificationRepository.find({
+      where: { semaine },
+      order: { ligne: 'ASC', jour: 'ASC' }
+    });
+
+    // Filtrer celles avec qtePlanifiee > 0
+    const planificationsAffichees = toutesLesPlanifications.filter(plan => plan.qtePlanifiee > 0);
+
+    return {
+      message: `Planifications de la semaine "${semaine}"`,
+      semaine: {
+        id: semaineEntity.id,
+        nom: semaineEntity.nom,
+        dateDebut: semaineEntity.dateDebut,
+        dateFin: semaineEntity.dateFin
+      },
+      totalPlanifications: toutesLesPlanifications.length, // TOUTES
+      planificationsAffichees: planificationsAffichees.length, // FILTRÉES
+      planifications: planificationsAffichees.map(plan => ({
+        id: plan.id,
+        semaine: plan.semaine,
+        jour: plan.jour,
+        ligne: plan.ligne,
+        reference: plan.reference,
+        of: plan.of,
+        qtePlanifiee: plan.qtePlanifiee,
+        qteModifiee: plan.qteModifiee,
+        quantiteSource: this.getQuantitySource(plan),
+        emballage: plan.emballage,
+        nbOperateurs: plan.nbOperateurs,
+        nbHeuresPlanifiees: plan.nbHeuresPlanifiees,
+        decProduction: plan.decProduction,
+        decMagasin: plan.decMagasin,
+        deltaProd: plan.deltaProd,
+        pcsProd: `${plan.pcsProd}%`
+      }))
+    };
+  }
+
+  // ==================== MÉTHODES EXISTANTES (inchangées) ====================
   async getSemaines() {
     const semaines = await this.semaineRepository.find({
       relations: ['creePar'],
@@ -575,52 +634,6 @@ export class SemaineService {
         nom: semaine.nom,
         dateDebut: semaine.dateDebut,
         dateFin: semaine.dateFin
-      },
-      totalPlanifications: planifications.length,
-      planifications: planifications.map(plan => ({
-        id: plan.id,
-        semaine: plan.semaine,
-        jour: plan.jour,
-        ligne: plan.ligne,
-        reference: plan.reference,
-        of: plan.of,
-        qtePlanifiee: plan.qtePlanifiee,
-        qteModifiee: plan.qteModifiee,
-        quantiteSource: this.getQuantitySource(plan),
-        emballage: plan.emballage,
-        nbOperateurs: plan.nbOperateurs,
-        nbHeuresPlanifiees: plan.nbHeuresPlanifiees,
-        decProduction: plan.decProduction,
-        decMagasin: plan.decMagasin,
-        deltaProd: plan.deltaProd,
-        pcsProd: `${plan.pcsProd}%`
-      }))
-    };
-  }
-
-  async getPlanificationsView(getPlanificationsViewDto: GetPlanificationsViewDto) {
-    const { semaine } = getPlanificationsViewDto;
-
-    const semaineEntity = await this.semaineRepository.findOne({
-      where: { nom: semaine }
-    });
-
-    if (!semaineEntity) {
-      throw new NotFoundException(`Semaine "${semaine}" non trouvée`);
-    }
-
-    const planifications = await this.planificationRepository.find({
-      where: { semaine },
-      order: { ligne: 'ASC', jour: 'ASC' }
-    });
-
-    return {
-      message: `Planifications de la semaine "${semaine}"`,
-      semaine: {
-        id: semaineEntity.id,
-        nom: semaineEntity.nom,
-        dateDebut: semaineEntity.dateDebut,
-        dateFin: semaineEntity.dateFin
       },
       totalPlanifications: planifications.length,
       planifications: planifications.map(plan => ({

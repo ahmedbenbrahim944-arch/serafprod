@@ -26,12 +26,10 @@ export class MagasinComponent implements OnInit {
   isLoading: boolean = false;
   errorMessage: string = '';
   
-  // Pour le tableau organisé comme le PDF
   tableData: any[] = [];
-  
-  // Nouvelle structure pour le tableau horizontal
   horizontalTableData: any[] = [];
   weekDays: string[] = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  daysWithData: string[] = [];
   
   constructor(
     private semaineService: SemaineService,
@@ -44,7 +42,6 @@ export class MagasinComponent implements OnInit {
     this.loadLignes();
   }
   
-  // Charger les semaines disponibles
   loadSemaines(): void {
     this.semaines = this.getWeeksList().map(nom => ({
       nom: nom,
@@ -62,9 +59,9 @@ export class MagasinComponent implements OnInit {
     this.planifications = [];
     this.tableData = [];
     this.horizontalTableData = [];
+    this.daysWithData = [];
   }
   
-  // Charger les lignes disponibles
   loadLignes(): void {
     this.productService.getAllLines().subscribe({
       next: (response) => {
@@ -82,7 +79,6 @@ export class MagasinComponent implements OnInit {
     });
   }
   
-  // Charger les données magasin
   loadMagasinData(): void {
     if (!this.selectedSemaine || !this.selectedLigne) {
       this.errorMessage = 'Veuillez sélectionner une semaine et une ligne';
@@ -101,7 +97,7 @@ export class MagasinComponent implements OnInit {
       next: (response) => {
         this.planifications = response.details || [];
         this.organizeDataForTable();
-        this.organizeDataForHorizontalTable(); // Organiser pour le tableau horizontal
+        this.organizeDataForHorizontalTable();
         this.isLoading = false;
       },
       error: (error) => {
@@ -111,14 +107,13 @@ export class MagasinComponent implements OnInit {
         this.planifications = [];
         this.tableData = [];
         this.horizontalTableData = [];
+        this.daysWithData = [];
       }
     });
   }
   
-  // Organiser les données pour le tableau comme le PDF
   organizeDataForTable(): void {
     this.tableData = [];
-    
     const groupedData: { [key: string]: any } = {};
     
     this.planifications.forEach(item => {
@@ -144,12 +139,11 @@ export class MagasinComponent implements OnInit {
     );
   }
   
-  // Nouvelle méthode: Organiser les données pour le tableau horizontal
   organizeDataForHorizontalTable(): void {
     this.horizontalTableData = [];
-    
-    // Grouper par référence
+    this.daysWithData = [];
     const refMap = new Map<string, any>();
+    const daysSet = new Set<string>();
     
     this.planifications.forEach(item => {
       if (item.quantiteSource > 0) {
@@ -173,17 +167,21 @@ export class MagasinComponent implements OnInit {
             quantiteSource: item.quantiteSource,
             decMagasin: item.decMagasin || 0
           };
+          
+          if (item.quantiteSource > 0 || item.decMagasin > 0) {
+            daysSet.add(day);
+          }
         }
       }
     });
     
-    // Convertir en tableau et trier
     this.horizontalTableData = Array.from(refMap.values()).sort((a, b) => 
       a.reference.localeCompare(b.reference)
     );
+    
+    this.daysWithData = this.weekDays.filter(day => daysSet.has(day));
   }
   
-  // Mettre à jour la déclaration magasin
   updateDecMagasin(item: any, newValue: number, day?: string): void {
     const request = {
       semaine: this.selectedSemaine,
@@ -197,9 +195,7 @@ export class MagasinComponent implements OnInit {
       next: (response) => {
         console.log('Déclaration mise à jour:', response);
         
-        // Mettre à jour les deux structures de données
         if (day) {
-          // Pour le tableau horizontal
           const horizontalItem = this.horizontalTableData.find(
             data => data.reference === item.reference
           );
@@ -207,7 +203,6 @@ export class MagasinComponent implements OnInit {
             horizontalItem[day].decMagasin = newValue;
           }
         } else {
-          // Pour le tableau vertical
           item.decMagasin = newValue;
         }
       },
@@ -218,248 +213,228 @@ export class MagasinComponent implements OnInit {
     });
   }
   
-  // Générer et télécharger le PDF
   downloadPDF(): void {
     if (this.horizontalTableData.length === 0) {
       this.errorMessage = 'Aucune donnée à exporter en PDF';
       return;
     }
     
-    this.generateHorizontalPDF();
+    this.generateFormattedPDF();
   }
   
-  // Nouvelle méthode: Générer le PDF avec tableau horizontal
- private generateHorizontalPDF(): void {
-  try {
-    const doc = new jsPDF('landscape');
-    
-    // Titre
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`PLANIFICATION MAGASIN`, 14, 15);
-    
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Ligne: ${this.selectedLigne}`, 14, 25);
-    doc.text(`Semaine: ${this.selectedSemaine}`, 14, 32);
-    
-    // Préparer les données pour le tableau
-    const headers = [
-      'RÉFÉRENCE',
-      'LUNDI C',
-      'LUNDI DM',
-      'MARDI C', 
-      'MARDI DM',
-      'MERCREDI C',
-      'MERCREDI DM',
-      'JEUDI C',
-      'JEUDI DM',
-      'VENDREDI C',
-      'VENDREDI DM',
-      'SAMEDI C',
-      'SAMEDI DM'
-    ];
-    
-    const tableData = this.horizontalTableData.map(item => [
-      item.reference,
-      item.lundi?.quantiteSource || 0,
-      item.lundi?.decMagasin || '',
-      item.mardi?.quantiteSource || 0,
-      item.mardi?.decMagasin || '',
-      item.mercredi?.quantiteSource || 0,
-      item.mercredi?.decMagasin || '',
-      item.jeudi?.quantiteSource || 0,
-      item.jeudi?.decMagasin || '',
-      item.vendredi?.quantiteSource || 0,
-      item.vendredi?.decMagasin || '',
-      item.samedi?.quantiteSource || 0,
-      item.samedi?.decMagasin || ''
-    ]);
-    
-    // Générer le tableau manuellement (sans autoTable)
-    this.generateManualTable(doc, headers, tableData);
-    
-    // Télécharger
-    doc.save(`Magasin-${this.selectedLigne}-${this.selectedSemaine}-Tableau.pdf`);
-    
-  } catch (error) {
-    console.error('Erreur génération PDF:', error);
-    this.errorMessage = 'Erreur lors de la génération du PDF';
-  }
-}
-
-private generateManualTable(doc: jsPDF, headers: string[], data: any[][], startY: number = 40): number {
-  const margin = 14;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const colWidth = (pageWidth - margin * 2) / headers.length;
-  let y = startY;
-  
-  // Styles pour l'en-tête
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setFillColor(41, 128, 185);
-  doc.setTextColor(255, 255, 255);
-  
-  // Dessiner l'en-tête
-  let x = margin;
-  headers.forEach((header, i) => {
-    doc.rect(x, y, colWidth, 10, 'F');
-    doc.text(header, x + 2, y + 7);
-    x += colWidth;
-  });
-  
-  y += 10;
-  
-  // Styles pour le corps
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(10);
-  
-  // Dessiner les données
-  data.forEach((row, rowIndex) => {
-    // Alterner les couleurs de fond
-    if (rowIndex % 2 === 0) {
-      doc.setFillColor(245, 245, 245);
-    } else {
-      doc.setFillColor(255, 255, 255);
-    }
-    
-    // Dessiner la ligne
-    x = margin;
-    row.forEach((cell, cellIndex) => {
-      doc.rect(x, y, colWidth, 8, 'F');
-      
-      // Alignement différent pour la première colonne (référence)
-      if (cellIndex === 0) {
-        doc.text(String(cell), x + 2, y + 6);
-      } else {
-        doc.text(String(cell), x + colWidth / 2, y + 6, { align: 'center' });
-      }
-      
-      x += colWidth;
-    });
-    
-    y += 8;
-    
-    // Vérifier si besoin d'une nouvelle page
-    if (y > doc.internal.pageSize.getHeight() - 20) {
-      doc.addPage('landscape');
-      y = margin;
-    }
-  });
-  
-  return y;
-}
-  
-  // Méthode alternative: Générer le PDF manuellement (sans autoTable)
-  private generateManualHorizontalPDF(): void {
+  private generateFormattedPDF(): void {
     try {
-      const doc = new jsPDF('landscape');
+      // Format portrait A4
+      const doc = new jsPDF('portrait', 'mm', 'a4');
       
-      // Configuration
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 14;
-      let y = margin;
+      const margin = 10;
       
-      // Titre
+      // Titre principal - Couleur noire pour meilleure visibilité
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
-      doc.text(`PLANIFICATION MAGASIN`, pageWidth / 2, y, { align: 'center' });
-      y += 10;
+      doc.setTextColor(0, 0, 0);
+      doc.text('DÉCLARATION MAGASIN', pageWidth / 2, 15, { align: 'center' });
       
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Ligne: ${this.selectedLigne} | Semaine: ${this.selectedSemaine}`, pageWidth / 2, y, { align: 'center' });
-      y += 15;
+      // Informations de la ligne et semaine
+      doc.setFontSize(12);
+      doc.text(`Ligne: ${this.selectedLigne}`, margin, 25);
+      doc.text(`Semaine: ${this.selectedSemaine}`, pageWidth - margin, 25, { align: 'right' });
       
-      // En-tête du tableau
-      const colWidth = 20;
-      const refColWidth = 30;
-      let x = margin;
+      // Séparateur
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.line(margin, 30, pageWidth - margin, 30);
       
-      doc.setFontSize(11);
+      if (this.daysWithData.length === 0) {
+        doc.setFontSize(12);
+        doc.setTextColor(255, 0, 0);
+        doc.text('Aucune donnée disponible', pageWidth / 2, pageHeight / 2, { align: 'center' });
+        
+        const fileName = `Magasin-${this.selectedLigne}-${this.selectedSemaine}.pdf`;
+        doc.save(fileName);
+        return;
+      }
+      
+      // Calcul dynamique des largeurs
+      const refColWidth = 45;
+      const cdmColWidth = 15;
+      const availableWidth = pageWidth - (2 * margin) - refColWidth - cdmColWidth;
+      const dayColWidth = availableWidth / this.daysWithData.length;
+      
+      let currentY = 35;
+      
+      // En-tête du tableau - Couleur de fond blanche
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.3);
       doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
       
-      // Première ligne d'en-tête
-      doc.text('RÉFÉRENCE', x, y);
-      x += refColWidth;
+      let currentX = margin;
       
-      this.weekDays.forEach(day => {
-        doc.text(day.toUpperCase(), x + colWidth / 2, y, { align: 'center' });
-        x += colWidth * 2; // 2 colonnes par jour (C et DM)
+      // Cellule REF
+      doc.rect(currentX, currentY, refColWidth, 8);
+      doc.text('REF', currentX + refColWidth / 2, currentY + 5, { align: 'center' });
+      currentX += refColWidth;
+      
+      // Cellule C/DM
+      doc.rect(currentX, currentY, cdmColWidth, 8);
+      doc.text('C/DM', currentX + cdmColWidth / 2, currentY + 5, { align: 'center' });
+      currentX += cdmColWidth;
+      
+      // Cellules des jours - Texte noir sans fond
+      this.daysWithData.forEach(day => {
+        doc.rect(currentX, currentY, dayColWidth, 8);
+        const dayLabel = this.getFrenchDayAbbreviation(day);
+        // Texte noir pour les jours
+        doc.setTextColor(0, 0, 0); 
+        doc.text(dayLabel, currentX + dayColWidth / 2, currentY + 5, { align: 'center' });
+        currentX += dayColWidth;
       });
       
-      y += 8;
-      x = margin;
-      
-      // Deuxième ligne d'en-tête (C/DM)
-      doc.text('', x, y);
-      x += refColWidth;
-      
-      this.weekDays.forEach(day => {
-        doc.text('C', x, y);
-        doc.text('DM', x + colWidth, y);
-        x += colWidth * 2;
-      });
-      
-      y += 8;
-      
-      // Ligne séparatrice
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 10;
+      currentY += 8;
       
       // Données
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       
       this.horizontalTableData.forEach((item, index) => {
-        x = margin;
+        // Nouvelle page si nécessaire
+        if (currentY > pageHeight - 20) {
+          doc.addPage('portrait');
+          currentY = margin;
+          
+          // Répéter l'en-tête sur nouvelle page
+          currentX = margin;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.setFillColor(255, 255, 255);
+          doc.setTextColor(0, 0, 0);
+          
+          // Cellule REF
+          doc.rect(currentX, currentY, refColWidth, 8);
+          doc.text('REF', currentX + refColWidth / 2, currentY + 5, { align: 'center' });
+          currentX += refColWidth;
+          
+          doc.rect(currentX, currentY, cdmColWidth, 8);
+          doc.text('C/DM', currentX + cdmColWidth / 2, currentY + 5, { align: 'center' });
+          currentX += cdmColWidth;
+          
+          this.daysWithData.forEach(day => {
+            doc.rect(currentX, currentY, dayColWidth, 8);
+            const dayLabel = this.getFrenchDayAbbreviation(day);
+            // Texte noir pour les jours
+            doc.setTextColor(0, 0, 0);
+            doc.text(dayLabel, currentX + dayColWidth / 2, currentY + 5, { align: 'center' });
+            currentX += dayColWidth;
+          });
+          
+          currentY += 8;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+        }
         
-        // Référence
-        doc.text(item.reference, x, y);
-        x += refColWidth;
+        // Ligne C
+        currentX = margin;
         
-        // Données par jour
-        this.weekDays.forEach(day => {
-          const dayData = item[day] || { quantiteSource: 0, decMagasin: 0 };
-          
-          // C
-          doc.text(dayData.quantiteSource.toString(), x + colWidth / 2, y, { align: 'center' });
-          
-          // DM
-          const dmText = dayData.decMagasin > 0 ? dayData.decMagasin.toString() : '';
-          doc.text(dmText, x + colWidth + colWidth / 2, y, { align: 'center' });
-          
-          x += colWidth * 2;
+        // Cellule REF (fusionnée pour C et DM)
+        doc.rect(currentX, currentY, refColWidth, 16);
+        doc.setTextColor(0, 0, 0);
+        // Couper la référence si trop longue
+        const refText = item.reference.length > 15 ? item.reference.substring(0, 15) + '...' : item.reference;
+        doc.text(refText, currentX + 2, currentY + 10);
+        currentX += refColWidth;
+        
+        // Cellule C
+        doc.rect(currentX, currentY, cdmColWidth, 8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 100, 0); // Orange pour C
+        doc.text('C', currentX + cdmColWidth / 2, currentY + 5, { align: 'center' });
+        currentX += cdmColWidth;
+        
+        // Valeurs C pour chaque jour
+        this.daysWithData.forEach(day => {
+          doc.rect(currentX, currentY, dayColWidth, 8);
+          const value = item[day]?.quantiteSource || 0;
+          if (value > 0) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0); // Noir pour les valeurs
+            doc.text(value.toString(), currentX + dayColWidth / 2, currentY + 5, { align: 'center' });
+          }
+          doc.setFont('helvetica', 'normal');
+          currentX += dayColWidth;
         });
         
-        y += 8;
+        currentY += 8;
+        
+        // Ligne DM
+        currentX = margin + refColWidth;
+        
+        // Cellule DM
+        doc.rect(currentX, currentY, cdmColWidth, 8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 100, 0); // Vert pour DM
+        doc.text('DM', currentX + cdmColWidth / 2, currentY + 5, { align: 'center' });
+        currentX += cdmColWidth;
+        
+        // Valeurs DM pour chaque jour
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        this.daysWithData.forEach(day => {
+          doc.rect(currentX, currentY, dayColWidth, 8);
+          const dmValue = item[day]?.decMagasin || 0;
+          if (dmValue > 0) {
+            doc.text(dmValue.toString(), currentX + dayColWidth / 2, currentY + 5, { align: 'center' });
+          }
+          currentX += dayColWidth;
+        });
+        
+        currentY += 8;
         
         // Ligne séparatrice entre les références
         if (index < this.horizontalTableData.length - 1) {
-          doc.line(margin, y - 2, pageWidth - margin, y - 2);
-          y += 2;
-        }
-        
-        // Nouvelle page si nécessaire
-        if (y > pageHeight - 20) {
-          doc.addPage('landscape');
-          y = margin;
+          doc.setDrawColor(200, 200, 200);
+          doc.setLineWidth(0.1);
+          doc.line(margin, currentY, pageWidth - margin, currentY);
+          currentY += 2;
         }
       });
       
-      // Pied de page
-      doc.setFontSize(9);
-      doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, margin, pageHeight - 10);
+      // Ajouter le numéro de page
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Page ${i} / ${pageCount}`, 
+                pageWidth / 2, pageHeight - 5, { align: 'center' });
+      }
       
       // Télécharger
-      doc.save(`Magasin-${this.selectedLigne}-${this.selectedSemaine}.pdf`);
+      const fileName = `Magasin-${this.selectedLigne}-${this.selectedSemaine}.pdf`;
+      doc.save(fileName);
       
     } catch (error) {
       console.error('Erreur génération PDF:', error);
       this.errorMessage = 'Erreur lors de la génération du PDF';
     }
+  }
+  
+  // Fonction pour obtenir l'abréviation française des jours
+  private getFrenchDayAbbreviation(day: string): string {
+    const abbreviations: { [key: string]: string } = {
+      'lundi': 'Lun',
+      'mardi': 'Mar',
+      'mercredi': 'Mer',
+      'jeudi': 'Jeu',
+      'vendredi': 'Ven',
+      'samedi': 'Sam'
+    };
+    return abbreviations[day.toLowerCase()] || day.substring(0, 3);
   }
   
   getWeeksList(): string[] {

@@ -6,6 +6,7 @@
     </svg>
     Retour 
   </button>
+
   <!-- Header -->
   <div class="header">
     <h1>Statistiques de Production</h1>
@@ -42,59 +43,130 @@
   <!-- Statistiques -->
   <div *ngIf="showStats && !isLoading" class="stats-content">
     
-    <!-- Lignes -->
-    <div class="lignes-section">
-      <h2>Lignes de production</h2>
-      <div class="lignes-list">
-        <div 
-          *ngFor="let ligne of statsLignes" 
-          class="ligne-card"
-          [class.selected]="ligne.ligne === ligneSelectionnee"
-          (click)="selectionnerLigne(ligne.ligne)">
-          
-          <div class="ligne-header">
-            <span class="ligne-nom">{{ ligne.ligne }}</span>
-            <span class="ligne-percentage">{{ ligne.pcsProdTotal.toFixed(1) }}%</span>
-          </div>
-          
-          <div class="progress-bar">
-            <div 
-              class="progress-fill" 
-              [style.width.%]="ligne.pcsProdTotal"
-              [style.background-color]="getColorForPercentage(ligne.pcsProdTotal)">
+    <!-- Layout avec sidebar et contenu principal -->
+    <div class="main-layout">
+      
+      <!-- Sidebar - Lignes -->
+      <div class="lignes-sidebar">
+        <h2>Lignes de production</h2>
+        <div class="lignes-list">
+          <div 
+            *ngFor="let ligne of statsLignes" 
+            class="ligne-card"
+            [class.selected]="ligne.ligne === ligneSelectionnee"
+            (click)="selectionnerLigne(ligne.ligne)">
+            
+            <div class="ligne-header">
+              <span class="ligne-nom">{{ ligne.ligne }}</span>
+              <span class="ligne-percentage">{{ ligne.pcsProdTotal.toFixed(1) }}%</span>
             </div>
-          </div>
-          
-          <div class="ligne-details">
-            <span>Planifications: {{ ligne.nombrePlanifications }}</span>
-            <span>Références: {{ ligne.nombreReferences }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Graphiques -->
-    <div class="charts-section">
-      <!-- Histogramme -->
-      <div class="chart-card">
-        <h3>Production par ligne - {{ semaineSelectionnee }}</h3>
-        <div class="chart-wrapper">
-          <canvas id="barChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Graphiques circulaires -->
-      <div class="pie-charts-grid">
-        <div *ngFor="let ligne of statsLignes" class="pie-card">
-          <h4>{{ ligne.ligne }}</h4>
-          <div class="pie-wrapper">
-            <canvas [id]="'pieChart-' + ligne.ligne"></canvas>
-            <div class="pie-center">
-              <span class="percentage">{{ ligne.pcsProdTotal.toFixed(0) }}%</span>
-              <span class="label">Rendement</span>
+            
+            <div class="progress-bar">
+              <div 
+                class="progress-fill" 
+                [style.width.%]="ligne.pcsProdTotal"
+                [style.background-color]="getColorForPercentage(ligne.pcsProdTotal)">
+              </div>
+            </div>
+            
+            <div class="ligne-details">
+              <span>Planifications: {{ ligne.nombrePlanifications }}</span>
+              <span>Références: {{ ligne.nombreReferences }}</span>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Contenu principal - Graphiques -->
+      <div class="main-content">
+        
+        <!-- Histogramme -->
+        <div class="chart-card">
+          <h3>Production par ligne - {{ semaineSelectionnee }}</h3>
+          <div class="chart-wrapper">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Les 5M totaux de la semaine -->
+        <div class="cinq-m-section">
+          <h3>Analyse des 5M - {{ semaineSelectionnee }}</h3>
+          
+          <div class="cinq-m-grid">
+            
+            <!-- Matière Première -->
+            <div class="m-card">
+              <div class="m-chart-wrapper">
+                <canvas id="pieChart-matierePremiere"></canvas>
+                <div class="m-center">
+                  <span class="m-percentage">{{ (stats5M?.matierePremiere ?? 0).toFixed(1) }}%</span>
+                </div>
+              </div>
+              <div class="m-info">
+                <h4>Matière Première</h4>
+                <p class="m-description">Écarts liés aux matières premières</p>
+              </div>
+            </div>
+
+            <!-- Absence -->
+            <div class="m-card">
+              <div class="m-chart-wrapper">
+                <canvas id="pieChart-absence"></canvas>
+                <div class="m-center">
+                  <span class="m-percentage">{{ (stats5M?.absence ?? 0).toFixed(1) }}%</span>
+                </div>
+              </div>
+              <div class="m-info">
+                <h4>Absence</h4>
+                <p class="m-description">Écarts dus aux absences</p>
+              </div>
+            </div>
+
+            <!-- Rendement -->
+            <div class="m-card">
+              <div class="m-chart-wrapper">
+                <canvas id="pieChart-rendement"></canvas>
+                <div class="m-center">
+                  <span class="m-percentage">{{ (stats5M?.rendement ?? 0).toFixed(1) }}%</span>
+                </div>
+              </div>
+              <div class="m-info">
+                <h4>Rendement</h4>
+                <p class="m-description">Écarts de rendement</p>
+              </div>
+            </div>
+
+            <!-- Maintenance -->
+            <div class="m-card">
+              <div class="m-chart-wrapper">
+                <canvas id="pieChart-maintenance"></canvas>
+                <div class="m-center">
+                  <span class="m-percentage">{{ (stats5M?.maintenance ?? 0).toFixed(1) }}%</span>
+                </div>
+              </div>
+              <div class="m-info">
+                <h4>Maintenance</h4>
+                <p class="m-description">Écarts dus à la maintenance</p>
+              </div>
+            </div>
+
+            <!-- Qualité -->
+            <div class="m-card">
+              <div class="m-chart-wrapper">
+                <canvas id="pieChart-qualite"></canvas>
+                <div class="m-center">
+                  <span class="m-percentage">{{ (stats5M?.qualite ?? 0).toFixed(1) }}%</span>
+                </div>
+              </div>
+              <div class="m-info">
+                <h4>Qualité</h4>
+                <p class="m-description">Écarts de qualité</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -102,7 +174,7 @@
   <!-- Message initial -->
   <div *ngIf="!showStats && !isLoading" class="welcome-card">
     <div class="welcome-icon"></div>
-    <h2></h2>
-    <p></p>
+    <h2>Bienvenue</h2>
+    <p>Sélectionnez une semaine et cliquez sur "Afficher les statistiques"</p>
   </div>
 </div>

@@ -4,7 +4,7 @@
 
 /* ==================== LAYOUT PRINCIPAL ==================== */
 .full-screen-layout {
-  min-height: 100vh;
+  min-height: 80vh;
   background: #f8fafc !important;
 }
 
@@ -269,7 +269,7 @@
 .week-planning-table {
   border-collapse: separate;
   border-spacing: 0;
-  width: 100%;
+  width: 80%;
   background: #ffffff !important;
   font-size: 0.813rem !important;
   border-radius: 8px;
@@ -1124,7 +1124,7 @@
 
 
 .week-planning-table tbody tr:nth-child(5n+1) td:not(.sticky-cell) {
-    background: #2a77dd !important;
+    background: #2687d6!important;
     border-top: 1px solid #033164 !important;
     border-bottom: 1px solid #93c5fd !important;
     border-left: 1px solid #93c5fd !important;

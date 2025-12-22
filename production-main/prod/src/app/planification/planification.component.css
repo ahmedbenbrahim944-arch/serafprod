@@ -33,7 +33,7 @@
   background: #f1f5f9 !important;
   padding: 6px 8px !important;
   font-weight: 100;
-  color: #334155;
+  color: #090c11;
   border: 1px solid #e2e8f0 !important;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -53,7 +53,7 @@
   min-width: 100px !important;
   font-size: 0.813rem !important;
   background: transparent !important;
-  color: #475569 !important;
+  color: #050505 !important;
   text-align: center;
   font-weight: 500;
   transition: background-color 0.15s ease;
@@ -745,7 +745,7 @@
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 .week-planning-table tbody tr:nth-child(5n+1) td:not(.sticky-cell) {
-    background: #2a77dd !important;
+    background: #2687d6 !important;
     border-top: 1px solid #033164 !important;
     border-bottom: 1px solid #93c5fd !important;
     border-left: 1px solid #93c5fd !important;
