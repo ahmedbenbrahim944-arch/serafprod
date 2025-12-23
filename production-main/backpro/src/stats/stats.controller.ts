@@ -61,4 +61,21 @@ async getPourcentage5MParSemaine(@Body() getStatsSemaineDto: GetStatsSemaineDto)
 async getPourcentage5MParSemaineQuery(@Query('semaine') semaine: string) {
   return this.statsService.getStatsPourcentage5MParSemaine(semaine);
 }
+// Dans stats.controller.ts - Ajoute ces nouvelles routes
+
+@Post('pourcentage-5m-ligne')
+@UseGuards(JwtAuthGuard)
+@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+@HttpCode(HttpStatus.OK)
+async getPourcentage5MParLigne(@Body() getStatsSemaineDto: GetStatsSemaineDto) {
+  const { semaine } = getStatsSemaineDto;
+  return this.statsService.getPourcentage5MParLigne(semaine);
+}
+
+// Option: Version GET avec query param
+@Get('pourcentage-5m-ligne')
+@UseGuards(JwtAuthGuard)
+async getPourcentage5MParLigneQuery(@Query('semaine') semaine: string) {
+  return this.statsService.getPourcentage5MParLigne(semaine);
+}
 }

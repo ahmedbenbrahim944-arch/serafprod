@@ -61,6 +61,45 @@ export interface Pourcentage5MResponse {
   }>;
 }
 
+// Nouvelle interface pour les 5M par ligne
+export interface DetailParCause {
+  quantite: number;
+  pourcentage: number;
+  pourcentageDuTotal: number;
+}
+
+export interface Ligne5MStats {
+  ligne: string;
+  nombrePlanifications: number;
+  nombreReferences: number;
+  totalQuantiteSource: number;
+  total5M: number;
+  pourcentage5M: number;
+  detailParCause: {
+    matierePremiere: DetailParCause;
+    absence: DetailParCause;
+    rendement: DetailParCause;
+    maintenance: DetailParCause;
+    qualite: DetailParCause;
+  };
+}
+
+export interface Pourcentage5MParLigneResponse {
+  message: string;
+  periode: {
+    semaine: string;
+    dateCalcul: string;
+    nombreTotalPlanifications: number;
+    nombreLignes: number;
+  };
+  resumeGlobal: {
+    totalQuantiteSource: number;
+    total5M: number;
+    pourcentage5MGlobal: number;
+  };
+  lignes: Ligne5MStats[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -139,6 +178,36 @@ export class StatsService {
     });
 
     return this.http.post<Pourcentage5MResponse>(`${this.apiUrl}/pourcentage-5m`, 
+      { semaine },
+      { headers }
+    );
+  }
+
+  /**
+   * NOUVELLE MÉTHODE: Récupère les pourcentages des 5M par ligne pour une semaine donnée
+   */
+  getPourcentage5MParLigne(semaine: string): Observable<Pourcentage5MParLigneResponse> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.getToken()}`
+    });
+
+    return this.http.get<Pourcentage5MParLigneResponse>(`${this.apiUrl}/pourcentage-5m-ligne`, {
+      params: { semaine },
+      headers
+    });
+  }
+
+  /**
+   * Alternative: Utilisation de la route POST pour les pourcentages 5M par ligne
+   */
+  getPourcentage5MParLignePost(semaine: string): Observable<Pourcentage5MParLigneResponse> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.getToken()}`
+    });
+
+    return this.http.post<Pourcentage5MParLigneResponse>(`${this.apiUrl}/pourcentage-5m-ligne`, 
       { semaine },
       { headers }
     );

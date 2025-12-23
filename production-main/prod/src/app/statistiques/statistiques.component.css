@@ -450,3 +450,106 @@
     grid-template-columns: 1fr;
   }
 }
+/* Badge pour indiquer la ligne sélectionnée */
+.ligne-selectionnee-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+.ligne-selectionnee-badge svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.ligne-selectionnee-badge span {
+  flex: 1;
+}
+
+.btn-reset-ligne {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-reset-ligne svg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.btn-reset-ligne:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.btn-reset-ligne:active {
+  transform: scale(0.95);
+}
+
+/* Animation d'entrée */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Amélioration de l'état sélectionné dans la sidebar */
+.ligne-card.selected {
+  border: 2px solid #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.ligne-card.selected .ligne-nom {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+/* Animation sur les cartes 5M lors du changement */
+.m-card {
+  transition: all 0.3s ease;
+}
+
+.cinq-m-section h3 {
+  transition: color 0.3s ease;
+}
+
+/* Responsive pour le badge */
+@media (max-width: 768px) {
+  .ligne-selectionnee-badge {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 15px;
+  }
+  
+  .ligne-selectionnee-badge svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .btn-reset-ligne {
+    align-self: flex-end;
+  }
+}

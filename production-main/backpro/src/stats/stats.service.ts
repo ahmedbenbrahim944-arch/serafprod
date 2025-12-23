@@ -539,4 +539,179 @@ async getStatsPourcentage5MParSemaine(semaine: string) {
     );
   }
 }
+// Dans stats.service.ts - Ajoute cette nouvelle méthode
+async getPourcentage5MParLigne(semaine: string) {
+  console.log(`=== CALCUL POURCENTAGE 5M PAR LIGNE POUR SEMAINE ${semaine} ===`);
+
+  try {
+    // 1. Récupérer toutes les planifications de la semaine
+    const planifications = await this.planificationRepository.find({
+      where: { semaine: semaine },
+      relations: ['nonConformites'],
+      order: { ligne: 'ASC' }
+    });
+
+    if (planifications.length === 0) {
+      throw new NotFoundException(
+        `Aucune planification trouvée pour la semaine ${semaine}`
+      );
+    }
+
+    // 2. Grouper les données par ligne
+    const statsParLigne: Record<string, any> = {};
+
+    // 3. Parcourir toutes les planifications
+    for (const plan of planifications) {
+      const ligne = plan.ligne;
+      const quantiteSource = this.getQuantitySource(plan);
+
+      // Initialiser la ligne si elle n'existe pas
+      if (!statsParLigne[ligne]) {
+        statsParLigne[ligne] = {
+          ligne: ligne,
+          totalQuantiteSource: 0,
+          matierePremiere: 0,
+          absence: 0,
+          rendement: 0,
+          maintenance: 0,
+          qualite: 0,
+          total5M: 0,
+          nombrePlanifications: 0,
+          references: new Set<string>()
+        };
+      }
+
+      // Mettre à jour les totaux
+      const ligneStats = statsParLigne[ligne];
+      ligneStats.totalQuantiteSource += quantiteSource;
+      ligneStats.nombrePlanifications += 1;
+      ligneStats.references.add(plan.reference);
+
+      // Ajouter les non-conformités si elles existent
+      if (plan.nonConformites && plan.nonConformites.length > 0) {
+        const nonConf = plan.nonConformites[0];
+        
+        ligneStats.matierePremiere += nonConf.matierePremiere;
+        ligneStats.absence += nonConf.absence;
+        ligneStats.rendement += nonConf.rendement;
+        ligneStats.maintenance += nonConf.maintenance;
+        ligneStats.qualite += nonConf.qualite;
+        ligneStats.total5M += nonConf.total;
+      }
+    }
+
+    // 4. Fonction pour calculer le pourcentage
+    const calculerPourcentage = (valeur: number, total: number): number => {
+      if (total <= 0) return 0;
+      return Math.round((valeur / total) * 100 * 10) / 10; // Une décimale
+    };
+
+    // 5. Calculer les pourcentages pour chaque ligne
+    const resultats = Object.values(statsParLigne).map((ligne: any) => {
+      const pourcentage5M = calculerPourcentage(ligne.total5M, ligne.totalQuantiteSource);
+      
+      // Calculer la répartition des causes dans le total 5M
+      const calculerPourcentageDans5M = (cause: number): number => {
+        if (ligne.total5M <= 0) return 0;
+        return Math.round((cause / ligne.total5M) * 100 * 10) / 10;
+      };
+
+      return {
+        ligne: ligne.ligne,
+        nombrePlanifications: ligne.nombrePlanifications,
+        nombreReferences: ligne.references.size,
+        totalQuantiteSource: ligne.totalQuantiteSource,
+        total5M: ligne.total5M,
+        pourcentage5M: pourcentage5M,
+        detailParCause: {
+          matierePremiere: {
+            quantite: ligne.matierePremiere,
+            pourcentage: calculerPourcentageDans5M(ligne.matierePremiere),
+            pourcentageDuTotal: calculerPourcentage(ligne.matierePremiere, ligne.totalQuantiteSource)
+          },
+          absence: {
+            quantite: ligne.absence,
+            pourcentage: calculerPourcentageDans5M(ligne.absence),
+            pourcentageDuTotal: calculerPourcentage(ligne.absence, ligne.totalQuantiteSource)
+          },
+          rendement: {
+            quantite: ligne.rendement,
+            pourcentage: calculerPourcentageDans5M(ligne.rendement),
+            pourcentageDuTotal: calculerPourcentage(ligne.rendement, ligne.totalQuantiteSource)
+          },
+          maintenance: {
+            quantite: ligne.maintenance,
+            pourcentage: calculerPourcentageDans5M(ligne.maintenance),
+            pourcentageDuTotal: calculerPourcentage(ligne.maintenance, ligne.totalQuantiteSource)
+          },
+          qualite: {
+            quantite: ligne.qualite,
+            pourcentage: calculerPourcentageDans5M(ligne.qualite),
+            pourcentageDuTotal: calculerPourcentage(ligne.qualite, ligne.totalQuantiteSource)
+          }
+        },
+        // Version simplifiée pour tableau
+        resumeTableau: [
+          { cause: 'Matière Première', quantite: ligne.matierePremiere, pourcentage5M: calculerPourcentageDans5M(ligne.matierePremiere) },
+          { cause: 'Absence', quantite: ligne.absence, pourcentage5M: calculerPourcentageDans5M(ligne.absence) },
+          { cause: 'Rendement', quantite: ligne.rendement, pourcentage5M: calculerPourcentageDans5M(ligne.rendement) },
+          { cause: 'Maintenance', quantite: ligne.maintenance, pourcentage5M: calculerPourcentageDans5M(ligne.maintenance) },
+          { cause: 'Qualité', quantite: ligne.qualite, pourcentage5M: calculerPourcentageDans5M(ligne.qualite) }
+        ]
+      };
+    });
+
+    // 6. Trier par pourcentage 5M décroissant
+    resultats.sort((a, b) => b.pourcentage5M - a.pourcentage5M);
+
+    // 7. Calculer les totaux globaux
+    const totalGlobal = {
+      totalQuantiteSource: resultats.reduce((sum, ligne) => sum + ligne.totalQuantiteSource, 0),
+      total5M: resultats.reduce((sum, ligne) => sum + ligne.total5M, 0),
+      pourcentage5MGlobal: 0
+    };
+    
+    totalGlobal.pourcentage5MGlobal = calculerPourcentage(
+      totalGlobal.total5M, 
+      totalGlobal.totalQuantiteSource
+    );
+
+    // 8. Préparer la réponse
+    const response = {
+      message: `Pourcentages 5M par ligne pour la semaine ${semaine}`,
+      periode: {
+        semaine: semaine,
+        dateCalcul: new Date().toISOString(),
+        nombreTotalPlanifications: planifications.length,
+        nombreLignes: resultats.length
+      },
+      resumeGlobal: {
+        totalQuantiteSource: totalGlobal.totalQuantiteSource,
+        total5M: totalGlobal.total5M,
+        pourcentage5MGlobal: totalGlobal.pourcentage5MGlobal
+      },
+      lignes: resultats,
+      // Pour faciliter la génération de graphiques
+      resumePourGraphique: {
+        labels: resultats.map(l => l.ligne),
+        pourcentages: resultats.map(l => l.pourcentage5M),
+        totaux: resultats.map(l => l.total5M)
+      }
+    };
+
+    console.log(`=== FIN POURCENTAGE 5M PAR LIGNE POUR SEMAINE ${semaine} ===`);
+    return response;
+
+  } catch (error) {
+    console.error(`Erreur dans getPourcentage5MParLigne:`, error);
+    
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+    
+    throw new InternalServerErrorException(
+      `Erreur lors du calcul des pourcentages 5M par ligne: ${error.message}`
+    );
+  }
+}
 }

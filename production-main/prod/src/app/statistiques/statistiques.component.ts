@@ -1,7 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { StatsService, Pourcentage5MResponse } from './stats.service';
+import { 
+  StatsService, 
+  Pourcentage5MResponse,
+  Pourcentage5MParLigneResponse,
+  Ligne5MStats
+} from './stats.service';
 import { Chart, registerables } from 'chart.js';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -40,6 +45,10 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   showStats: boolean = false;
 
+  // Nouvelles propriétés pour les 5M par ligne
+  stats5MParLigneData: Ligne5MStats[] = [];
+  titre5M: string = ''; // Titre dynamique pour la section 5M
+
   private barChart: Chart | null = null;
   private pieCharts5M: Map<string, Chart> = new Map();
 
@@ -74,16 +83,21 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
 
     this.isLoading = true;
     this.showStats = false;
+    this.ligneSelectionnee = null; // Reset la ligne sélectionnée
     
-    // Charger les deux APIs en parallèle
+    // Charger les trois APIs en parallèle
     forkJoin({
       lignes: this.statsService.getPcsProdTotalParLigne(this.semaineSelectionnee),
-      pourcentage5M: this.statsService.getPourcentage5MParSemaine(this.semaineSelectionnee)
+      pourcentage5M: this.statsService.getPourcentage5MParSemaine(this.semaineSelectionnee),
+      pourcentage5MParLigne: this.statsService.getPourcentage5MParLigne(this.semaineSelectionnee)
     }).subscribe({
       next: (response) => {
         this.statsLignes = response.lignes.lignes;
         
-        // Extraire les pourcentages dans le total 5M
+        // Stocker les données 5M par ligne
+        this.stats5MParLigneData = response.pourcentage5MParLigne.lignes;
+        
+        // Extraire les pourcentages globaux dans le total 5M
         const causes = response.pourcentage5M.pourcentagesParCause;
         this.stats5M = {
           matierePremiere: causes.matierePremiere.pourcentageDansTotal5MNumber,
@@ -92,6 +106,9 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
           maintenance: causes.maintenance.pourcentageDansTotal5MNumber,
           qualite: causes.qualite.pourcentageDansTotal5MNumber
         };
+
+        // Initialiser le titre avec la semaine
+        this.titre5M = `Analyse des 5M - ${this.semaineSelectionnee}`;
 
         this.isLoading = false;
         this.showStats = true;
@@ -245,8 +262,33 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * NOUVELLE MÉTHODE: Sélectionner une ligne et afficher ses 5M
+   */
   selectionnerLigne(ligne: string): void {
     this.ligneSelectionnee = ligne;
+    
+    // Trouver les données 5M de cette ligne
+    const ligne5M = this.stats5MParLigneData.find(l => l.ligne === ligne);
+    
+    if (ligne5M) {
+      // Mettre à jour le titre
+      this.titre5M = `Analyse des 5M - ${ligne}`;
+      
+      // Mettre à jour les stats 5M avec les pourcentages du total (pourcentageDuTotal)
+      this.stats5M = {
+        matierePremiere: ligne5M.detailParCause.matierePremiere.pourcentageDuTotal,
+        absence: ligne5M.detailParCause.absence.pourcentageDuTotal,
+        rendement: ligne5M.detailParCause.rendement.pourcentageDuTotal,
+        maintenance: ligne5M.detailParCause.maintenance.pourcentageDuTotal,
+        qualite: ligne5M.detailParCause.qualite.pourcentageDuTotal
+      };
+      
+      // Recréer les graphiques avec les nouvelles données
+      setTimeout(() => {
+        this.creerGraphiquesCirculaires5M();
+      }, 50);
+    }
   }
 
   getColorForPercentage(percentage: number): string {

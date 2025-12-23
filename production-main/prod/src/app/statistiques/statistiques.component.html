@@ -88,9 +88,23 @@
           </div>
         </div>
 
-        <!-- Les 5M totaux de la semaine -->
+        <!-- Les 5M avec titre dynamique -->
         <div class="cinq-m-section">
-          <h3>Analyse des 5M - {{ semaineSelectionnee }}</h3>
+          <!-- Titre dynamique qui change selon la sélection -->
+          <h3>{{ titre5M }}</h3>
+          
+          <!-- Indicateur visuel si une ligne est sélectionnée -->
+          <div *ngIf="ligneSelectionnee" class="ligne-selectionnee-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Ligne sélectionnée : {{ ligneSelectionnee }}</span>
+            <button class="btn-reset-ligne" (click)="chargerStatistiques()" title="Revenir aux statistiques globales">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
           
           <div class="cinq-m-grid">
             
