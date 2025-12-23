@@ -33,6 +33,77 @@ export interface Pourcentage5MCause {
   pourcentageDansTotal5MNumber: number;
 }
 
+export interface OuvrierSaisie {
+  matricule: string;
+  nomPrenom: string;
+  ligne?: string;
+  totalHeures?: number;
+  nbPhases?: number;
+  phases?: any;
+}
+
+
+
+export interface StatsSaisieResponse {
+  message: string;
+  periode: {
+    date: string;
+    jour: string;
+    semaine: string;
+    dateCalcul: string;
+  };
+  nombreRapportsSaisis: number;
+  nombreTotalRapports: number;
+  nombreOuvriersTotal: number;
+  nombreOuvriersNonSaisis: number;
+  tauxSaisie: number;
+  ouvriersNonSaisis: OuvrierSaisie[];
+  ouvriersAyantSaisi: OuvrierSaisie[];
+  repartitionParLigne: {
+    [ligne: string]: {
+      nombreOuvriers: number;
+      totalHeures: number;
+      ouvriers: Array<{
+        matricule: string;
+        nomPrenom: string;
+        heures: number;
+      }>;
+    };
+  };
+}
+
+
+
+export interface StatsParDateResponse {
+  message: string;
+  periode: {
+    date: string;
+    jour: string;
+    semaine: string;
+    dateCalcul: string;
+  };
+  productionParLigne: Array<{
+    ligne: string;
+    nombrePlanifications: number;
+    nombreReferences: number;
+    totalQteSource: number;
+    totalDecProduction: number;
+    pcsProdTotal: number;
+    total5M: number;
+    pourcentage5M: number;
+    references: Array<any>;
+  }>;
+  resumeProduction: {
+    nombreLignes: number;
+    totalQteSource: number;
+    totalDecProduction: number;
+    pcsProdMoyen: number;
+    total5M: number;
+    pourcentage5MMoyen: number;
+  };
+  rapportsSaisie: StatsSaisieResponse;
+}
+
 export interface Pourcentage5MResponse {
   message: string;
   periode: {
@@ -219,4 +290,40 @@ export class StatsService {
   private getToken(): string {
     return localStorage.getItem('access_token') || '';
   }
+
+  getStatsParDate(date: string): Observable<StatsParDateResponse> {
+  const headers = new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${this.getToken()}`
+  });
+
+  return this.http.get<StatsParDateResponse>(`${this.apiUrl}/par-date`, {
+    params: { date },
+    headers
+  });
+}
+
+getStatsParDatePost(date: string): Observable<StatsParDateResponse> {
+  const headers = new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${this.getToken()}`
+  });
+
+  return this.http.post<StatsParDateResponse>(`${this.apiUrl}/par-date`, 
+    { date },
+    { headers }
+  );
+}
+
+getRapportsSaisieParDate(date: string): Observable<StatsSaisieResponse> {
+  const headers = new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${this.getToken()}`
+  });
+
+  return this.http.get<StatsSaisieResponse>(`${this.apiUrl}/rapports-saisie-date`, {
+    params: { date },
+    headers
+  });
+}
 }

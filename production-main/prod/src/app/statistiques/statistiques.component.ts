@@ -38,6 +38,7 @@ interface Stats5M {
   styleUrls: ['./statistiques.component.css']
 })
 export class StatistiquesComponent implements OnInit, OnDestroy {
+  // Propriétés pour le filtre par semaine
   semaineSelectionnee: string = 'semaine1';
   statsLignes: LigneStats[] = [];
   stats5M: Stats5M | null = null;
@@ -45,11 +46,23 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   showStats: boolean = false;
 
-  // Nouvelles propriétés pour les 5M par ligne
-  stats5MParLigneData: Ligne5MStats[] = [];
-  titre5M: string = ''; // Titre dynamique pour la section 5M
+  // Propriétés pour le filtre par date
+  dateSelectionnee: string = '';
+  maxDate: string = '';
+  showStatsDate: boolean = false;
+  isLoadingDate: boolean = false;
+  statsDate: any = null;
+  statsLignesDate: LigneStats[] = [];
+  showNonSaisieList: boolean = false;
+  showSaisieDetails: boolean = false;
 
+  // Propriétés pour les 5M par ligne (semaine uniquement)
+  stats5MParLigneData: Ligne5MStats[] = [];
+  titre5M: string = '';
+
+  // Charts
   private barChart: Chart | null = null;
+  private barChartDate: Chart | null = null;
   private pieCharts5M: Map<string, Chart> = new Map();
 
   // Couleurs pour les 5M
@@ -64,7 +77,8 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
   constructor(private statsService: StatsService, private router: Router) {}
 
   ngOnInit(): void {
-    // Ne pas charger automatiquement
+    const today = new Date();
+    this.maxDate = today.toISOString().split('T')[0];
   }
 
   ngOnDestroy(): void {
@@ -75,6 +89,9 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     return Array.from({ length: 52 }, (_, i) => i + 1);
   }
 
+  /**
+   * Charger les statistiques par semaine
+   */
   chargerStatistiques(): void {
     if (!this.semaineSelectionnee) {
       alert('Veuillez sélectionner une semaine');
@@ -83,9 +100,9 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
 
     this.isLoading = true;
     this.showStats = false;
-    this.ligneSelectionnee = null; // Reset la ligne sélectionnée
+    this.showStatsDate = false; // Masquer les stats par date
+    this.ligneSelectionnee = null;
     
-    // Charger les trois APIs en parallèle
     forkJoin({
       lignes: this.statsService.getPcsProdTotalParLigne(this.semaineSelectionnee),
       pourcentage5M: this.statsService.getPourcentage5MParSemaine(this.semaineSelectionnee),
@@ -93,11 +110,8 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (response) => {
         this.statsLignes = response.lignes.lignes;
-        
-        // Stocker les données 5M par ligne
         this.stats5MParLigneData = response.pourcentage5MParLigne.lignes;
         
-        // Extraire les pourcentages globaux dans le total 5M
         const causes = response.pourcentage5M.pourcentagesParCause;
         this.stats5M = {
           matierePremiere: causes.matierePremiere.pourcentageDansTotal5MNumber,
@@ -107,7 +121,6 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
           qualite: causes.qualite.pourcentageDansTotal5MNumber
         };
 
-        // Initialiser le titre avec la semaine
         this.titre5M = `Analyse des 5M - ${this.semaineSelectionnee}`;
 
         this.isLoading = false;
@@ -125,21 +138,93 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Charger les statistiques par date
+   */
+  chargerStatsParDate(): void {
+    if (!this.dateSelectionnee) {
+      alert('Veuillez sélectionner une date');
+      return;
+    }
+
+    this.isLoadingDate = true;
+    this.showStatsDate = false;
+    this.showStats = false; // Masquer les stats par semaine
+    
+    this.statsService.getStatsParDate(this.dateSelectionnee).subscribe({
+      next: (response) => {
+        this.statsDate = response;
+        
+        // Extraire les lignes de production pour la date
+        this.statsLignesDate = response.productionParLigne.map(ligne => ({
+          ligne: ligne.ligne,
+          pcsProdTotal: ligne.pcsProdTotal,
+          nombrePlanifications: ligne.nombrePlanifications,
+          nombreReferences: ligne.nombreReferences,
+          totalQteSource: ligne.totalQteSource,
+          totalDecProduction: ligne.totalDecProduction
+        }));
+        
+        console.log('Stats par date:', response);
+        
+        this.isLoadingDate = false;
+        this.showStatsDate = true;
+        this.showNonSaisieList = false;
+        this.showSaisieDetails = false;
+        
+        setTimeout(() => {
+          this.creerGraphiquesDate();
+        }, 100);
+      },
+      error: (error) => {
+        console.error('Erreur:', error);
+        this.isLoadingDate = false;
+        alert('Erreur lors du chargement des statistiques pour cette date');
+      }
+    });
+  }
+
+  /**
+   * Détruire tous les graphiques
+   */
   private destroyAllCharts(): void {
     if (this.barChart) {
       this.barChart.destroy();
       this.barChart = null;
     }
+    if (this.barChartDate) {
+      this.barChartDate.destroy();
+      this.barChartDate = null;
+    }
     this.pieCharts5M.forEach(chart => chart.destroy());
     this.pieCharts5M.clear();
   }
 
+  /**
+   * Créer les graphiques pour la semaine
+   */
   creerGraphiques(): void {
     this.destroyAllCharts();
     this.creerHistogramme();
     this.creerGraphiquesCirculaires5M();
   }
 
+  /**
+   * Créer les graphiques pour la date
+   */
+  creerGraphiquesDate(): void {
+    // Détruire uniquement le graphique date si il existe
+    if (this.barChartDate) {
+      this.barChartDate.destroy();
+      this.barChartDate = null;
+    }
+    
+    this.creerHistogrammeDate();
+  }
+
+  /**
+   * Créer l'histogramme pour la semaine
+   */
   creerHistogramme(): void {
     const ctx = document.getElementById('barChart') as HTMLCanvasElement;
     if (!ctx) return;
@@ -195,6 +280,64 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Créer l'histogramme pour la date
+   */
+  creerHistogrammeDate(): void {
+    const ctx = document.getElementById('barChartDate') as HTMLCanvasElement;
+    if (!ctx) return;
+
+    const labels = this.statsLignesDate.map(l => l.ligne);
+    const data = this.statsLignesDate.map(l => l.pcsProdTotal);
+    
+    const colors = data.map(value => {
+      if (value >= 75) return '#10b981';
+      if (value >= 50) return '#22c55e';
+      if (value >= 25) return '#f59e0b';
+      return '#ef4444';
+    });
+
+    this.barChartDate = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Rendement (%)',
+          data: data,
+          backgroundColor: colors,
+          borderColor: colors.map(c => this.darkenColor(c)),
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: {
+              display: true,
+              text: 'Rendement (%)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Lignes de production'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  }
+
   private darkenColor(color: string): string {
     const colors: {[key: string]: string} = {
       '#10b981': '#0da271',
@@ -205,6 +348,9 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     return colors[color] || '#374151';
   }
 
+  /**
+   * Créer les graphiques circulaires des 5M
+   */
   creerGraphiquesCirculaires5M(): void {
     if (!this.stats5M) return;
 
@@ -234,7 +380,7 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
             data: [valeur, reste],
             backgroundColor: [
               couleur,
-              '#e5e7eb'  // Gris clair pour le reste
+              '#e5e7eb'
             ],
             borderWidth: 0
           }]
@@ -263,19 +409,16 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * NOUVELLE MÉTHODE: Sélectionner une ligne et afficher ses 5M
+   * Sélectionner une ligne (pour le mode semaine avec 5M)
    */
   selectionnerLigne(ligne: string): void {
     this.ligneSelectionnee = ligne;
     
-    // Trouver les données 5M de cette ligne
     const ligne5M = this.stats5MParLigneData.find(l => l.ligne === ligne);
     
     if (ligne5M) {
-      // Mettre à jour le titre
       this.titre5M = `Analyse des 5M - ${ligne}`;
       
-      // Mettre à jour les stats 5M avec les pourcentages du total (pourcentageDuTotal)
       this.stats5M = {
         matierePremiere: ligne5M.detailParCause.matierePremiere.pourcentageDuTotal,
         absence: ligne5M.detailParCause.absence.pourcentageDuTotal,
@@ -284,7 +427,6 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
         qualite: ligne5M.detailParCause.qualite.pourcentageDuTotal
       };
       
-      // Recréer les graphiques avec les nouvelles données
       setTimeout(() => {
         this.creerGraphiquesCirculaires5M();
       }, 50);
@@ -300,5 +442,34 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
 
   retourChoix(): void {
     this.router.navigate(['/choix']);
+  }
+
+  /**
+   * Méthodes pour les statistiques de saisie
+   */
+  getLignesAvecSaisie(): any[] {
+    if (!this.statsDate?.rapportsSaisie?.repartitionParLigne) {
+      return [];
+    }
+    
+    return Object.entries(this.statsDate.rapportsSaisie.repartitionParLigne).map(([nom, data]: [string, any]) => ({
+      nom,
+      nombreOuvriers: data.nombreOuvriers,
+      totalHeures: data.totalHeures
+    }));
+  }
+
+  toggleNonSaisieList(): void {
+    this.showNonSaisieList = !this.showNonSaisieList;
+  }
+
+  toggleSaisieDetails(): void {
+    this.showSaisieDetails = !this.showSaisieDetails;
+  }
+
+  notifyOuvrier(ouvrier: any): void {
+    if (confirm(`Voulez-vous notifier ${ouvrier.nomPrenom} (${ouvrier.matricule}) ?`)) {
+      alert(`Notification envoyée à ${ouvrier.nomPrenom}`);
+    }
   }
 }

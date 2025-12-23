@@ -84,7 +84,7 @@
 
             <button 
           *ngIf="isAdmin()"
-          (click)="setActiveTab('view-stats')"
+         [routerLink]="['/stat']"
           class="nav-button"
           [class.active]="activeTab() === 'view-stats'">
           <img src="assets/icons/stat.png" alt="View" class="nav-button-icon">

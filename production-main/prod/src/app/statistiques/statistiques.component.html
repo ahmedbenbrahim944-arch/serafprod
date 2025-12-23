@@ -11,37 +11,100 @@
   <div class="header">
     <h1>Statistiques de Production</h1>
     
+    <!-- NOUVEAUX CONTRÔLES CÔTE À CÔTE -->
     <div class="controls">
-      <div class="week-selector">
-        <label for="semaine">Semaine :</label>
-        <select 
-          id="semaine" 
-          [(ngModel)]="semaineSelectionnee" 
-          class="semaine-select">
-          <option *ngFor="let num of getSemainesArray()" [value]="'semaine' + num">
-            Semaine {{ num }}
-          </option>
-        </select>
-      </div>
       
-      <button 
-        class="btn-charger" 
-        (click)="chargerStatistiques()"
-        [disabled]="isLoading">
-        <span *ngIf="!isLoading">Afficher les statistiques</span>
-        <span *ngIf="isLoading">Chargement...</span>
-      </button>
+      <!-- SECTION FILTRE PAR SEMAINE -->
+      <div class="filter-group">
+        <div class="filter-header">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Filtrer par semaine</span>
+        </div>
+        
+        <div class="filter-inputs">
+          <div class="input-group">
+            <label for="semaine">Semaine :</label>
+            <select 
+              id="semaine" 
+              [(ngModel)]="semaineSelectionnee" 
+              class="filter-select">
+              <option *ngFor="let num of getSemainesArray()" [value]="'semaine' + num">
+                Semaine {{ num }}
+              </option>
+            </select>
+          </div>
+          
+          <button 
+            class="btn-filter" 
+            (click)="chargerStatistiques()"
+            [disabled]="isLoading">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <span *ngIf="!isLoading">Afficher</span>
+            <span *ngIf="isLoading">Chargement...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SÉPARATEUR VERTICAL -->
+      <div class="filter-separator"></div>
+
+      <!-- SECTION FILTRE PAR DATE -->
+      <div class="filter-group">
+        <div class="filter-header">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Filtrer par date</span>
+        </div>
+        
+        <div class="filter-inputs">
+          <div class="input-group">
+            <label for="dateFilter">Date :</label>
+            <input 
+              type="date" 
+              id="dateFilter" 
+              [(ngModel)]="dateSelectionnee"
+              
+              class="filter-input"
+            />
+          </div>
+          
+          <button 
+            class="btn-filter"
+            (click)="chargerStatsParDate()"
+            [disabled]="isLoadingDate">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <span *ngIf="!isLoadingDate">Afficher</span>
+            <span *ngIf="isLoadingDate">Chargement...</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
   <!-- Loading -->
-  <div *ngIf="isLoading" class="loading">
+  <div *ngIf="isLoading || isLoadingDate" class="loading">
     <div class="spinner"></div>
     <p>Chargement des données...</p>
   </div>
 
-  <!-- Statistiques -->
-  <div *ngIf="showStats && !isLoading" class="stats-content">
+  <!-- ============================================ -->
+  <!-- STATISTIQUES PAR SEMAINE -->
+  <!-- ============================================ -->
+  <div *ngIf="showStats && !isLoading && !showStatsDate" class="stats-content">
     
     <!-- Layout avec sidebar et contenu principal -->
     <div class="main-layout">
@@ -185,10 +248,201 @@
     </div>
   </div>
 
+  <!-- ============================================ -->
+  <!-- STATISTIQUES PAR DATE -->
+  <!-- ============================================ -->
+  <div *ngIf="showStatsDate && !isLoadingDate && !showStats" class="stats-content">
+    
+    <!-- Layout avec sidebar et contenu principal -->
+    <div class="main-layout">
+      
+      <!-- Sidebar - Lignes pour la date -->
+      <div class="lignes-sidebar">
+        <div class="sidebar-header">
+          <h2>Lignes de production</h2>
+          <span class="date-badge">{{ statsDate?.periode?.date | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="lignes-list">
+          <div 
+            *ngFor="let ligne of statsLignesDate" 
+            class="ligne-card">
+            
+            <div class="ligne-header">
+              <span class="ligne-nom">{{ ligne.ligne }}</span>
+              <span class="ligne-percentage">{{ ligne.pcsProdTotal.toFixed(1) }}%</span>
+            </div>
+            
+            <div class="progress-bar">
+              <div 
+                class="progress-fill" 
+                [style.width.%]="ligne.pcsProdTotal"
+                [style.background-color]="getColorForPercentage(ligne.pcsProdTotal)">
+              </div>
+            </div>
+            
+            <div class="ligne-details">
+              <span>Planifications: {{ ligne.nombrePlanifications }}</span>
+              <span>Références: {{ ligne.nombreReferences }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenu principal -->
+      <div class="main-content">
+        
+        <!-- Histogramme pour la date -->
+        <div class="chart-card">
+          <h3>Production par ligne - {{ statsDate?.periode?.date | date:'dd/MM/yyyy' }}</h3>
+          <div class="chart-wrapper">
+            <canvas id="barChartDate"></canvas>
+          </div>
+        </div>
+
+        <!-- Résumé Production -->
+        <div *ngIf="statsDate?.resumeProduction" class="production-summary">
+          <h3>Résumé Production</h3>
+          <div class="summary-cards">
+            <div class="summary-card">
+              <span class="summary-label">PCS Prod Moyen</span>
+              <span class="summary-value">{{ statsDate.resumeProduction.pcsProdMoyen.toFixed(1) }}%</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Pourcentage 5M Moyen</span>
+              <span class="summary-value">{{ statsDate.resumeProduction.pourcentage5MMoyen.toFixed(1) }}%</span>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Lignes Actives</span>
+              <span class="summary-value">{{ statsDate.resumeProduction.nombreLignes }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATISTIQUES DE SAISIE DES RAPPORTS -->
+        <div class="saisie-rapports-section">
+          <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Saisie des Rapports
+          </h3>
+          
+          <!-- Carte de résumé -->
+          <div class="saisie-summary-card">
+            <div class="saisie-stats">
+              <div class="saisie-stat">
+                <span class="stat-label">Ouvriers ayant saisi</span>
+                <span class="stat-value">{{ statsDate?.rapportsSaisie?.nombreRapportsSaisis || 0 }}</span>
+              </div>
+              <div class="saisie-stat">
+                <span class="stat-label">Ouvriers n'ayant pas saisi</span>
+                <span class="stat-value text-danger">{{ statsDate?.rapportsSaisie?.nombreOuvriersNonSaisis || 0 }}</span>
+              </div>
+              <div class="saisie-stat">
+                <span class="stat-label">Taux de saisie</span>
+                <span class="stat-value" [ngClass]="{
+                  'text-success': (statsDate?.rapportsSaisie?.tauxSaisie || 0) >= 80,
+                  'text-warning': (statsDate?.rapportsSaisie?.tauxSaisie || 0) >= 50 && (statsDate?.rapportsSaisie?.tauxSaisie || 0) < 80,
+                  'text-danger': (statsDate?.rapportsSaisie?.tauxSaisie || 0) < 50
+                }">
+                  {{ statsDate?.rapportsSaisie?.tauxSaisie || 0 }}%
+                </span>
+              </div>
+              <div class="saisie-stat">
+                <span class="stat-label">Total ouvriers</span>
+                <span class="stat-value">{{ statsDate?.rapportsSaisie?.nombreOuvriersTotal || 0 }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Liste des ouvriers n'ayant pas saisi -->
+          <div *ngIf="statsDate?.rapportsSaisie?.nombreOuvriersNonSaisis > 0" class="non-saisie-section">
+            <div class="section-header" (click)="toggleNonSaisieList()">
+              <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Ouvriers n'ayant pas saisi ({{ statsDate?.rapportsSaisie?.nombreOuvriersNonSaisis }})
+                <span class="toggle-icon">{{ showNonSaisieList ? '−' : '+' }}</span>
+              </h4>
+            </div>
+            
+            <div *ngIf="showNonSaisieList" class="non-saisie-list">
+              <div class="table-container">
+                <table class="ouvriers-table">
+                  <thead>
+                    <tr>
+                      <th>Matricule</th>
+                      <th>Nom & Prénom</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let ouvrier of statsDate?.rapportsSaisie?.ouvriersNonSaisis">
+                      <td>{{ ouvrier.matricule }}</td>
+                      <td>{{ ouvrier.nomPrenom }}</td>
+                      <td>
+                        <button class="btn-notify" (click)="notifyOuvrier(ouvrier)">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                          </svg>
+                          Notifier
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Liste des ouvriers ayant saisi (optionnel) -->
+          <div *ngIf="statsDate?.rapportsSaisie?.nombreRapportsSaisis > 0" class="saisie-details">
+            <div class="section-header" (click)="toggleSaisieDetails()">
+              <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Ouvriers ayant saisi ({{ statsDate?.rapportsSaisie?.nombreRapportsSaisis }})
+                <span class="toggle-icon">{{ showSaisieDetails ? '−' : '+' }}</span>
+              </h4>
+            </div>
+            
+            <div *ngIf="showSaisieDetails" class="saisie-details-list">
+              <div *ngIf="statsDate?.rapportsSaisie?.repartitionParLigne" class="repartition-lignes">
+                <h5>Répartition par ligne</h5>
+                <div class="lignes-grid">
+                  <div *ngFor="let ligne of getLignesAvecSaisie()" class="ligne-saisie-card">
+                    <span class="ligne-nom">{{ ligne.nom }}</span>
+                    <span class="ligne-count">{{ ligne.nombreOuvriers }} ouvrier(s)</span>
+                    <span class="ligne-heures">{{ ligne.totalHeures }} heures</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- Message initial -->
-  <div *ngIf="!showStats && !isLoading" class="welcome-card">
-    <div class="welcome-icon"></div>
+  <div *ngIf="!showStats && !showStatsDate && !isLoading && !isLoadingDate" class="welcome-card">
+    <div class="welcome-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+      </svg>
+    </div>
     <h2>Bienvenue</h2>
-    <p>Sélectionnez une semaine et cliquez sur "Afficher les statistiques"</p>
+    <p>Sélectionnez une semaine ou une date puis cliquez sur "Afficher"</p>
   </div>
 </div>

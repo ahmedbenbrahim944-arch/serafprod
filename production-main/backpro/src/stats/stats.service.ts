@@ -1,9 +1,15 @@
 // src/stats/stats.service.ts
-import { Injectable, NotFoundException,InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException,BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Planification } from '../semaine/entities/planification.entity';
 import { NonConformite } from '../non-conf/entities/non-conf.entity';
+import { SaisieRapport } from '../saisie-rapport/entities/saisie-rapport.entity';
+import { Ouvrier } from '../ouvrier/entities/ouvrier.entity';
+import { GetStatsDateDto } from './dto/get-stats-date.dto';
+import { Semaine } from '../semaine/entities/semaine.entity';
+import {MoreThanOrEqual, LessThanOrEqual} from "typeorm";
+
 
 @Injectable()
 export class StatsService {
@@ -12,12 +18,16 @@ export class StatsService {
     private planificationRepository: Repository<Planification>,
     @InjectRepository(NonConformite)
     private nonConfRepository: Repository<NonConformite>,
+    @InjectRepository(SaisieRapport)
+    private saisieRapportRepository: Repository<SaisieRapport>,
+    @InjectRepository(Ouvrier)
+    private ouvrierRepository: Repository<Ouvrier>,
+    @InjectRepository(Semaine)
+private semaineRepository: Repository<Semaine>,
   ) {}
 
   // Méthode utilitaire pour obtenir la quantité source
-  private getQuantitySource(planification: Planification): number {
-    return planification.qteModifiee > 0 ? planification.qteModifiee : planification.qtePlanifiee;
-  }
+ 
 
   // Méthode pour calculer le pourcentage d'écart
   private calculerEcartPourcentage(total5M: number, quantiteSource: number): number {
@@ -712,6 +722,337 @@ async getPourcentage5MParLigne(semaine: string) {
     throw new InternalServerErrorException(
       `Erreur lors du calcul des pourcentages 5M par ligne: ${error.message}`
     );
+  }
+}
+async getStatsParDate(getStatsDateDto: GetStatsDateDto) {
+    const { date } = getStatsDateDto;
+   
+    
+    console.log(`=== CALCUL STATS POUR LA DATE ${date} ===`);
+
+    try {
+      // 1. Convertir la date en semaine et jour (ATTENTION: méthode synchrone)
+      const { semaine, jour } = this.convertirDateEnSemaineEtJour(date); // PAS de "await"
+      
+      console.log(`Date ${date} convertie en: semaine="${semaine}", jour="${jour}"`);
+
+      // 2. Récupérer les stats de production par ligne
+      const statsProduction = await this.getProductionParLigneDate(semaine, jour);
+
+      // 3. Récupérer les stats de saisie des rapports
+      const statsRapports = await this.getRapportsSaisieStats(semaine, jour);
+
+      // 4. Préparer la réponse complète
+      const response = {
+        message: `Statistiques complètes pour le ${date}`,
+        periode: {
+          date: date,
+          jour: jour,
+          semaine: semaine,
+          dateCalcul: new Date().toISOString()
+        },
+        productionParLigne: statsProduction.lignes,
+        resumeProduction: {
+          nombreLignes: statsProduction.nombreLignes,
+          totalQteSource: statsProduction.totalQteSource,
+          totalDecProduction: statsProduction.totalDecProduction,
+          pcsProdMoyen: statsProduction.pcsProdMoyen,
+          total5M: statsProduction.total5M,
+          pourcentage5MMoyen: statsProduction.pourcentage5MMoyen
+        },
+        rapportsSaisie: statsRapports
+      };
+
+      console.log(`=== FIN CALCUL STATS POUR ${date} ===`);
+      return response;
+
+    } catch (error) {
+      console.error(`Erreur dans getStatsParDate:`, error);
+      
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      throw new InternalServerErrorException(
+        `Erreur lors du calcul des statistiques pour la date ${date}: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * ✅ NOUVELLE MÉTHODE : Stats de production par ligne pour une date
+   */
+  private async getProductionParLigneDate(semaine: string, jour: string) {
+    // Récupérer toutes les planifications pour ce jour
+    const planifications = await this.planificationRepository.find({
+      where: { semaine, jour },
+      relations: ['nonConformites'],
+      order: { ligne: 'ASC' }
+    });
+
+    if (planifications.length === 0) {
+      throw new NotFoundException(
+        `Aucune planification trouvée pour le ${jour} de la semaine ${semaine}`
+      );
+    }
+
+    // Grouper par ligne
+    const statsParLigne: Record<string, any> = {};
+
+    for (const plan of planifications) {
+      const ligne = plan.ligne;
+      const quantiteSource = this.getQuantitySource(plan);
+
+      if (!statsParLigne[ligne]) {
+        statsParLigne[ligne] = {
+          ligne: ligne,
+          totalQteSource: 0,
+          totalDecProduction: 0,
+          total5M: 0,
+          nombreReferences: new Set<string>(),
+          nombrePlanifications: 0,
+          references: []
+        };
+      }
+
+      const ligneStats = statsParLigne[ligne];
+      ligneStats.totalQteSource += quantiteSource;
+      ligneStats.totalDecProduction += plan.decProduction;
+      ligneStats.nombrePlanifications += 1;
+      ligneStats.nombreReferences.add(plan.reference);
+
+      // Ajouter les détails de la référence
+      ligneStats.references.push({
+        reference: plan.reference,
+        of: plan.of,
+        qtePlanifiee: plan.qtePlanifiee,
+        qteModifiee: plan.qteModifiee,
+        qteSource: quantiteSource,
+        decProduction: plan.decProduction,
+        pcsProd: plan.pcsProd
+      });
+
+      // Traiter les non-conformités
+      if (plan.nonConformites && plan.nonConformites.length > 0) {
+        const nonConf = plan.nonConformites[0];
+        ligneStats.total5M += nonConf.total;
+      }
+    }
+
+    // Calculer les pourcentages et formater
+    const lignesFormatees = Object.values(statsParLigne).map((ligne: any) => {
+      const pcsProd = ligne.totalQteSource > 0 
+        ? (ligne.totalDecProduction / ligne.totalQteSource) * 100 
+        : 0;
+      
+      const pourcentage5M = ligne.totalQteSource > 0
+        ? (ligne.total5M / ligne.totalQteSource) * 100
+        : 0;
+
+      return {
+        ligne: ligne.ligne,
+        nombrePlanifications: ligne.nombrePlanifications,
+        nombreReferences: ligne.nombreReferences.size,
+        totalQteSource: ligne.totalQteSource,
+        totalDecProduction: ligne.totalDecProduction,
+        pcsProdTotal: Math.round(pcsProd * 100) / 100,
+        total5M: ligne.total5M,
+        pourcentage5M: Math.round(pourcentage5M * 10) / 10,
+        references: ligne.references
+      };
+    });
+
+    // Calculer les totaux globaux
+    const totalQteSource = lignesFormatees.reduce((sum, l) => sum + l.totalQteSource, 0);
+    const totalDecProduction = lignesFormatees.reduce((sum, l) => sum + l.totalDecProduction, 0);
+    const total5M = lignesFormatees.reduce((sum, l) => sum + l.total5M, 0);
+    
+    const pcsProdMoyen = totalQteSource > 0 
+      ? Math.round((totalDecProduction / totalQteSource) * 100 * 100) / 100
+      : 0;
+    
+    const pourcentage5MMoyen = totalQteSource > 0
+      ? Math.round((total5M / totalQteSource) * 100 * 10) / 10
+      : 0;
+
+    return {
+      nombreLignes: lignesFormatees.length,
+      totalQteSource,
+      totalDecProduction,
+      pcsProdMoyen,
+      total5M,
+      pourcentage5MMoyen,
+      lignes: lignesFormatees
+    };
+  }
+
+  /**
+   * ✅ NOUVELLE MÉTHODE : Stats des rapports de saisie
+   */
+  private async getRapportsSaisieStats(semaine: string, jour: string) {
+    // 1. Récupérer tous les rapports pour ce jour
+    const rapports = await this.saisieRapportRepository.find({
+      where: { semaine, jour },
+      order: { ligne: 'ASC', matricule: 'ASC' }
+    });
+
+    // 2. Récupérer le nombre total d'ouvriers
+    const totalOuvriers = await this.ouvrierRepository.count();
+
+    // 3. Extraire les matricules ayant saisi
+    const matriculesAyantSaisi = new Set(rapports.map(r => r.matricule));
+    const nombreRapportsSaisis = matriculesAyantSaisi.size;
+
+    // 4. Récupérer tous les ouvriers
+    const tousLesOuvriers = await this.ouvrierRepository.find({
+      order: { matricule: 'ASC' }
+    });
+
+    // 5. Identifier les ouvriers n'ayant pas saisi
+    const ouvriersNonSaisis = tousLesOuvriers.filter(
+      ouvrier => !matriculesAyantSaisi.has(ouvrier.matricule)
+    ).map(ouvrier => ({
+      matricule: ouvrier.matricule,
+      nomPrenom: ouvrier.nomPrenom
+    }));
+
+    // 6. Liste des ouvriers ayant saisi avec leurs détails
+    const ouvriersAyantSaisi = rapports.map(rapport => ({
+      matricule: rapport.matricule,
+      nomPrenom: rapport.nomPrenom,
+      ligne: rapport.ligne,
+      totalHeures: rapport.totalHeuresJour,
+      nbPhases: rapport.nbPhasesJour,
+      phases: rapport.phases
+    }));
+
+    // 7. Stats par ligne
+    const statsParLigne: Record<string, any> = {};
+    rapports.forEach(rapport => {
+      if (!statsParLigne[rapport.ligne]) {
+        statsParLigne[rapport.ligne] = {
+          nombreOuvriers: 0,
+          totalHeures: 0,
+          ouvriers: []
+        };
+      }
+      statsParLigne[rapport.ligne].nombreOuvriers++;
+      statsParLigne[rapport.ligne].totalHeures += rapport.totalHeuresJour;
+      statsParLigne[rapport.ligne].ouvriers.push({
+        matricule: rapport.matricule,
+        nomPrenom: rapport.nomPrenom,
+        heures: rapport.totalHeuresJour
+      });
+    });
+
+    // 8. Calculer le taux de saisie
+    const tauxSaisie = totalOuvriers > 0 
+      ? Math.round((nombreRapportsSaisis / totalOuvriers) * 100 * 10) / 10
+      : 0;
+
+    return {
+      nombreRapportsSaisis: nombreRapportsSaisis,
+      nombreTotalRapports: rapports.length,
+      nombreOuvriersTotal: totalOuvriers,
+      nombreOuvriersNonSaisis: ouvriersNonSaisis.length,
+      tauxSaisie: tauxSaisie,
+      ouvriersNonSaisis: ouvriersNonSaisis,
+      ouvriersAyantSaisi: ouvriersAyantSaisi,
+      repartitionParLigne: statsParLigne
+    };
+  }
+
+  /**
+   * ✅ NOUVELLE MÉTHODE : Obtenir uniquement les stats de saisie pour une date
+   */
+   async getRapportsSaisieParDate(getStatsDateDto: GetStatsDateDto) {
+    const { date } = getStatsDateDto;
+    
+    console.log(`=== CALCUL RAPPORTS SAISIE POUR ${date} ===`);
+
+    try {
+      // Convertir la date en semaine et jour
+      const { semaine, jour } = this.convertirDateEnSemaineEtJour(date);
+      
+      console.log(`Date ${date} convertie en: semaine=${semaine}, jour=${jour}`);
+
+      const statsRapports = await this.getRapportsSaisieStats(semaine, jour);
+
+      return {
+        message: `Statistiques de saisie pour le ${date}`,
+        periode: {
+          date: date,
+          jour: jour,
+          semaine: semaine,
+          dateCalcul: new Date().toISOString()
+        },
+        ...statsRapports
+      };
+
+    } catch (error) {
+      console.error(`Erreur dans getRapportsSaisieParDate:`, error);
+      
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      throw new InternalServerErrorException(
+        `Erreur lors du calcul des rapports de saisie: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Méthode utilitaire (déjà existante dans votre code)
+   */
+  private getQuantitySource(planification: Planification): number {
+    return planification.qteModifiee > 0 
+      ? planification.qteModifiee 
+      : planification.qtePlanifiee;
+  }
+private convertirDateEnSemaineEtJour(dateStr: string): { semaine: string; jour: string } {
+  try {
+    const date = new Date(dateStr);
+    
+    // Vérifier si la date est valide
+    if (isNaN(date.getTime())) {
+      throw new BadRequestException(`Date invalide: ${dateStr}`);
+    }
+
+    // 1. CALCULER LE NUMÉRO DE SEMAINE (ISO)
+    // Méthode standard pour calculer la semaine ISO
+    const getISOWeeks = (d: Date) => {
+      const target = new Date(d.valueOf());
+      const dayNr = (d.getDay() + 6) % 7; // Lundi = 0, Dimanche = 6
+      target.setDate(target.getDate() - dayNr + 3);
+      const firstThursday = target.valueOf();
+      target.setMonth(0, 1);
+      if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+      }
+      return 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
+    };
+
+    const numeroSemaine = getISOWeeks(date);
+    
+    // 2. FORMATER LA SEMAINE COMME DANS VOTRE BASE : "semaine5"
+    const semaine = `semaine${numeroSemaine}`;
+    
+    // 3. FORMATER LE JOUR EN MINUSCULE COMME DANS VOTRE BASE : "lundi"
+    const joursMap = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const jour = joursMap[date.getDay()];
+
+    console.log(`[CONVERSION DATE] ${dateStr} → semaine: "${semaine}", jour: "${jour}"`);
+    
+    return { 
+      semaine,  // "semaine5" 
+      jour      // "lundi"
+    };
+  } catch (error) {
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
+    throw new BadRequestException(`Erreur lors de la conversion de la date: ${error.message}`);
   }
 }
 }
