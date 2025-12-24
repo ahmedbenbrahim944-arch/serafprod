@@ -1055,4 +1055,208 @@ private convertirDateEnSemaineEtJour(dateStr: string): { semaine: string; jour: 
     throw new BadRequestException(`Erreur lors de la conversion de la date: ${error.message}`);
   }
 }
+/**
+   * ✅ NOUVELLE MÉTHODE CORRIGÉE : Obtenir les stats PCS par mois pour toutes les lignes d'une année
+   * L'utilisateur envoie une date et on calcule pour toute l'année
+   */
+  async getStatsPcsParMoisEtLigne(getStatsAnnuelDto: { date: string }) {
+    const { date } = getStatsAnnuelDto;
+    
+    console.log(`=== CALCUL PCS PAR MOIS ET LIGNE POUR ${date} ===`);
+
+    try {
+      // 1. Extraire l'année de la date
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) {
+        throw new BadRequestException(`Date invalide: ${date}`);
+      }
+      
+      const annee = dateObj.getFullYear();
+      console.log(`Année extraite: ${annee}`);
+
+      // 2. Définir les 12 mois
+      const moisNoms = [
+        'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+        'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+      ];
+
+      // 3. Récupérer TOUTES les semaines de l'année
+      // On filtre par dateDebut qui contient l'année
+      const debutAnnee = new Date(`${annee}-01-01`);
+      const finAnnee = new Date(`${annee}-12-31`);
+      
+      const semaines = await this.semaineRepository.find({
+        where: {
+          dateDebut: MoreThanOrEqual(debutAnnee) && LessThanOrEqual(finAnnee)
+        }
+      });
+
+      if (semaines.length === 0) {
+        throw new NotFoundException(
+          `Aucune semaine trouvée pour l'année ${annee}`
+        );
+      }
+
+      const nomsSemainesAnnee = semaines.map(s => s.nom);
+      console.log(`Semaines trouvées: ${nomsSemainesAnnee.join(', ')}`);
+
+      // 4. Récupérer toutes les planifications de ces semaines
+      const planifications = await this.planificationRepository.find({
+        where: nomsSemainesAnnee.map(semaine => ({ semaine })),
+        order: { ligne: 'ASC', semaine: 'ASC' }
+      });
+
+      if (planifications.length === 0) {
+        throw new NotFoundException(
+          `Aucune planification trouvée pour l'année ${annee}`
+        );
+      }
+
+      console.log(`Nombre total de planifications: ${planifications.length}`);
+
+      // 5. Créer une map: semaine -> mois (1-12)
+      const semaineVsMois: Record<string, number> = {};
+      semaines.forEach(semaine => {
+        // dateDebut est un objet Date, on doit l'extraire
+        const dateDebut = semaine.dateDebut instanceof Date 
+          ? semaine.dateDebut 
+          : new Date(semaine.dateDebut);
+        
+        // Extraire le mois (1-12)
+        const moisNum = dateDebut.getMonth() + 1; // getMonth() retourne 0-11, on ajoute 1
+        semaineVsMois[semaine.nom] = moisNum;
+      });
+
+      // 6. Grouper par ligne et par mois
+      const statsParLigneEtMois: Record<string, Record<number, {
+        totalQteSource: number;
+        totalDecProduction: number;
+      }>> = {};
+
+      planifications.forEach(plan => {
+        const ligne = plan.ligne;
+        const moisNum = semaineVsMois[plan.semaine];
+        
+        if (!moisNum) {
+          console.warn(`Semaine ${plan.semaine} non trouvée dans la map`);
+          return;
+        }
+
+        // Initialiser la ligne
+        if (!statsParLigneEtMois[ligne]) {
+          statsParLigneEtMois[ligne] = {};
+        }
+
+        // Initialiser le mois pour cette ligne
+        if (!statsParLigneEtMois[ligne][moisNum]) {
+          statsParLigneEtMois[ligne][moisNum] = {
+            totalQteSource: 0,
+            totalDecProduction: 0
+          };
+        }
+
+        // Accumuler les totaux
+        const qteSource = this.getQuantitySource(plan);
+        statsParLigneEtMois[ligne][moisNum].totalQteSource += qteSource;
+        statsParLigneEtMois[ligne][moisNum].totalDecProduction += plan.decProduction;
+      });
+
+      // 7. Calculer les PCS et formater la réponse
+      const lignesFormatees = Object.entries(statsParLigneEtMois).map(([ligne, moisData]) => {
+        // Calculer les stats pour chaque mois
+        const moisStats: Record<string, {
+          pcsProd: number;
+          totalQteSource: number;
+          totalDecProduction: number;
+        }> = {};
+
+        let totalAnnuelQteSource = 0;
+        let totalAnnuelDecProduction = 0;
+
+        // Pour chaque mois (1-12)
+        for (let m = 1; m <= 12; m++) {
+          const data = moisData[m];
+          
+          if (data && data.totalQteSource > 0) {
+            const pcsProd = (data.totalDecProduction / data.totalQteSource) * 100;
+            moisStats[moisNoms[m - 1]] = {
+              pcsProd: Math.round(pcsProd * 100) / 100,
+              totalQteSource: data.totalQteSource,
+              totalDecProduction: data.totalDecProduction
+            };
+            totalAnnuelQteSource += data.totalQteSource;
+            totalAnnuelDecProduction += data.totalDecProduction;
+          } else {
+            // Mois sans données
+            moisStats[moisNoms[m - 1]] = {
+              pcsProd: 0,
+              totalQteSource: 0,
+              totalDecProduction: 0
+            };
+          }
+        }
+
+        // Calculer la moyenne annuelle (productivité globale)
+        const moyenneAnnuelle = totalAnnuelQteSource > 0
+          ? Math.round((totalAnnuelDecProduction / totalAnnuelQteSource) * 100 * 100) / 100
+          : 0;
+
+        return {
+          ligne,
+          mois: moisStats,
+          moyenneAnnuelle,
+          totalAnnuelQteSource,
+          totalAnnuelDecProduction
+        };
+      });
+
+      // 8. Trier les lignes par ordre alphabétique
+      lignesFormatees.sort((a, b) => a.ligne.localeCompare(b.ligne));
+
+      // 9. Calculer la productivité mensuelle globale (toutes lignes confondues)
+      const productiviteMensuelle: Record<string, number> = {};
+      for (let m = 1; m <= 12; m++) {
+        let totalMoisQteSource = 0;
+        let totalMoisDecProduction = 0;
+
+        lignesFormatees.forEach(ligne => {
+          const moisNom = moisNoms[m - 1];
+          totalMoisQteSource += ligne.mois[moisNom].totalQteSource;
+          totalMoisDecProduction += ligne.mois[moisNom].totalDecProduction;
+        });
+
+        productiviteMensuelle[moisNoms[m - 1]] = totalMoisQteSource > 0
+          ? Math.round((totalMoisDecProduction / totalMoisQteSource) * 100 * 100) / 100
+          : 0;
+      }
+
+      // 10. Calculer la moyenne annuelle globale
+      const totalGlobalQteSource = lignesFormatees.reduce((sum, l) => sum + l.totalAnnuelQteSource, 0);
+      const totalGlobalDecProduction = lignesFormatees.reduce((sum, l) => sum + l.totalAnnuelDecProduction, 0);
+      const moyenneAnnuelleGlobale = totalGlobalQteSource > 0
+        ? Math.round((totalGlobalDecProduction / totalGlobalQteSource) * 100 * 100) / 100
+        : 0;
+
+      return {
+        message: `Statistiques PCS par mois pour l'année ${annee}`,
+        annee,
+        dateCalcul: new Date().toISOString(),
+        nombreLignes: lignesFormatees.length,
+        productiviteMensuelle,
+        moyenneAnnuelleGlobale,
+        lignes: lignesFormatees
+      };
+
+    } catch (error) {
+      console.error(`Erreur dans getStatsPcsParMoisEtLigne:`, error);
+      
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      
+      throw new InternalServerErrorException(
+        `Erreur lors du calcul des stats PCS par mois: ${error.message}`
+      );
+    }
+  }
 }

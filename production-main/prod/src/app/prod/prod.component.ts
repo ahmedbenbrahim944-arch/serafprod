@@ -21,6 +21,7 @@ import { saveAs } from 'file-saver';
 import { StatsService } from './stats.service';
 import { ChartService } from './chart.service';
 import { Chart } from 'chart.js';
+import { StatsAnnuelService, StatsAnnuellesResponse } from './stats-annuel.service';
 
 
 
@@ -42,6 +43,13 @@ interface AddReferencesForm {
   errors: {
     selectedLine?: string;
     references?: string;
+  };
+}
+
+interface StatsAnnuellesForm {
+  date: string;
+  errors: {
+    date?: string;
   };
 }
 
@@ -153,6 +161,7 @@ export class ProdComponent implements OnInit {
   private rapportPhaseService = inject(RapportPhaseService);
   private statsService = inject(StatsService); 
   private chartService = inject(ChartService);
+  private statsAnnuelService = inject(StatsAnnuelService);
 
   showImageUploadModal = false;
   selectedLineImage: File | null = null;
@@ -200,6 +209,13 @@ charts: Chart[] = [];
     imagePreview: null,
     errors: {}
   };
+
+  statsAnnuellesForm: StatsAnnuellesForm = {
+  date: '',
+  errors: {}
+};
+
+statsAnnuellesPreview = signal<StatsAnnuellesResponse | null>(null);
 
   addRefForm: AddReferencesForm = {
   selectedLine: '', // Vide initialement
@@ -287,7 +303,365 @@ statsData = signal<any>(null);
       this.loadLineSummaryData();
     }
   });
+  effect(() => {
+  const date = this.statsAnnuellesForm.date;
+  if (date && date.trim()) {
+    this.loadStatsAnnuellesPreview(date);
+  }
+});
 }
+private loadStatsAnnuellesPreview(date: string) {
+  if (!date || !date.trim()) {
+    this.statsAnnuellesPreview.set(null);
+    return;
+  }
+
+  this.loading.set(true);
+  
+  this.statsAnnuelService.getStatsPcsParMois(date.trim())
+    .pipe(
+      takeUntilDestroyed(this.destroyRef),
+      catchError(error => {
+        console.error('Erreur chargement aperçu stats annuelles:', error);
+        this.statsAnnuellesPreview.set(null);
+        return of(null);
+      }),
+      finalize(() => this.loading.set(false))
+    )
+    .subscribe({
+      next: (data) => {
+        if (data) {
+          this.statsAnnuellesPreview.set(data);
+        }
+      }
+    });
+}
+
+/**
+ * Extraire l'année d'une date
+ */
+getYearFromDate(dateStr: string): number | string {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    return date.getFullYear();
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * Télécharger le fichier Excel des stats annuelles
+ */
+async onDownloadStatsAnnuelles() {
+  // Validation
+  this.statsAnnuellesForm.errors = {};
+  let hasErrors = false;
+
+  if (!this.statsAnnuellesForm.date.trim()) {
+    this.statsAnnuellesForm.errors.date = 'La date est requise';
+    hasErrors = true;
+  } else {
+    // Valider le format de date
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(this.statsAnnuellesForm.date)) {
+      this.statsAnnuellesForm.errors.date = 'Format de date invalide (YYYY-MM-DD requis)';
+      hasErrors = true;
+    }
+  }
+
+  if (hasErrors) return;
+
+  this.loading.set(true);
+  this.errorMessage.set(null);
+
+  try {
+    // Récupérer les données
+    const data = await this.getStatsAnnuelles(this.statsAnnuellesForm.date.trim());
+    
+    if (!data) {
+      this.errorMessage.set('Aucune donnée disponible pour cette année');
+      this.loading.set(false);
+      return;
+    }
+
+    // Générer le fichier Excel
+    await this.generateStatsAnnuellesExcel(data);
+    
+    this.showSuccessMessage(`Statistiques annuelles ${data.annee} téléchargées avec succès !`);
+    
+  } catch (error: any) {
+    console.error('Erreur lors du téléchargement:', error);
+    
+    if (error.status === 404) {
+      this.errorMessage.set(`Aucune donnée trouvée pour l'année sélectionnée`);
+    } else {
+      this.errorMessage.set(error.message || 'Erreur lors de la génération du rapport');
+    }
+  } finally {
+    this.loading.set(false);
+  }
+}
+
+/**
+ * Récupérer les données depuis l'API
+ */
+private getStatsAnnuelles(date: string): Promise<StatsAnnuellesResponse> {
+  return new Promise((resolve, reject) => {
+    this.statsAnnuelService.getStatsPcsParMois(date)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(error => {
+          reject(error);
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          if (response) {
+            resolve(response);
+          } else {
+            reject(new Error('Aucune donnée reçue'));
+          }
+        },
+        error: (error) => {
+          reject(error);
+        }
+      });
+  });
+}
+
+/**
+ * Générer le fichier Excel
+ */
+private async generateStatsAnnuellesExcel(data: StatsAnnuellesResponse): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(`Productivité ${data.annee}`);
+  
+  // Définir les noms des mois (avec abréviations)
+  const moisNoms = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+  ];
+  
+  const moisAbrev = [
+    'janv', 'févr', 'mars', 'avr', 'mai', 'juin',
+    'juil', 'août', 'sept', 'oct', 'nov', 'déc'
+  ];
+
+  // Titre principal (ligne 1)
+  const titleRow = worksheet.addRow([`Productivité`]);
+  titleRow.height = 40;
+  const titleCell = titleRow.getCell(1);
+  titleCell.font = { 
+    bold: true, 
+    size: 18,
+    color: { argb: 'FFFFFF' }
+  };
+  titleCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: '1565C0' }
+  };
+  titleCell.alignment = { 
+    vertical: 'middle', 
+    horizontal: 'center' 
+  };
+  worksheet.mergeCells(1, 1, 1, 15);
+
+  // Sous-titre "Productivité" (ligne 2)
+  const subtitleRow = worksheet.addRow(['Productivité']);
+  subtitleRow.height = 25;
+  const subtitleCell = subtitleRow.getCell(1);
+  subtitleCell.font = { size: 12 };
+  subtitleCell.alignment = { horizontal: 'center' };
+  worksheet.mergeCells(2, 1, 2, 15);
+
+  // TdB (ligne 3 - colonne M)
+  worksheet.getCell('M3').value = 'TdB';
+  worksheet.getCell('M3').alignment = { horizontal: 'right' };
+
+  // URL (ligne 4)
+  const urlRow = worksheet.addRow(['https://gwa001.it.abb.com/suppliers']);
+  const urlCell = urlRow.getCell(1);
+  urlCell.font = { size: 10, color: { argb: '0000FF' }, underline: true };
+  urlCell.alignment = { horizontal: 'center' };
+  worksheet.mergeCells(4, 1, 4, 15);
+
+  // Pilote (ligne 4 - colonne M)
+  worksheet.getCell('M4').value = 'Pilote : Y.Mohamed';
+  worksheet.getCell('M4').alignment = { horizontal: 'right' };
+
+  // En-têtes des colonnes (ligne 5)
+  const headers = [
+    'LP',
+    'Lignes',
+    ...moisAbrev.map(m => `${m}-${String(data.annee).slice(-2)}`),
+    'Productivité\nLignes'
+  ];
+  
+  const headerRow = worksheet.addRow(headers);
+  headerRow.height = 30;
+  
+  // Style des en-têtes
+  headerRow.eachCell((cell) => {
+    cell.font = { 
+      bold: true, 
+      size: 10,
+      color: { argb: '000000' }
+    };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'D3D3D3' }
+    };
+    cell.alignment = { 
+      vertical: 'middle', 
+      horizontal: 'center',
+      wrapText: true
+    };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+
+  // Données des lignes
+  data.lignes.forEach((ligne, index) => {
+    const rowData = [
+      index + 1, // LP (numéro de ligne)
+      ligne.ligne,
+      ...moisNoms.map(mois => {
+        const pcsProd = ligne.mois[mois]?.pcsProd || 0;
+        return pcsProd > 0 ? `${pcsProd.toFixed(2)}%` : '';
+      }),
+      `${ligne.moyenneAnnuelle.toFixed(2)}%`
+    ];
+    
+    const dataRow = worksheet.addRow(rowData);
+    
+    // Style des cellules de données
+    dataRow.eachCell((cell, colNumber) => {
+      cell.alignment = { 
+        vertical: 'middle', 
+        horizontal: colNumber <= 2 ? 'left' : 'center'
+      };
+      
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      
+      // Couleur de fond alternée
+      if (index % 2 === 0) {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'F8F9FA' }
+        };
+      }
+    });
+  });
+
+  // Ligne OBJECTIF
+  const objectifRow = worksheet.addRow([
+    '',
+    'OBJECTIF',
+    ...Array(12).fill('95,00%'),
+    '95,00%'
+  ]);
+  
+  objectifRow.eachCell((cell, colNumber) => {
+    cell.font = { bold: true, size: 10 };
+    cell.alignment = { 
+      vertical: 'middle', 
+      horizontal: colNumber <= 2 ? 'left' : 'center'
+    };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD700' }
+    };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+
+  // Ligne Productivité Mensuel
+  const prodMensuelRow = worksheet.addRow([
+    '',
+    'Productivité Mensuel',
+    ...moisNoms.map(mois => {
+      const prod = data.productiviteMensuelle[mois] || 0;
+      return prod > 0 ? `${prod.toFixed(2)}%` : '';
+    }),
+    `${data.moyenneAnnuelleGlobale.toFixed(2)}%`
+  ]);
+  
+  prodMensuelRow.eachCell((cell, colNumber) => {
+    cell.font = { bold: true, size: 10 };
+    cell.alignment = { 
+      vertical: 'middle', 
+      horizontal: colNumber <= 2 ? 'left' : 'center'
+    };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '90EE90' }
+    };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+
+  // Ajuster les largeurs des colonnes
+  worksheet.columns = [
+    { width: 6 },  // LP
+    { width: 20 }, // Lignes
+    ...Array(12).fill({ width: 10 }), // Mois
+    { width: 14 }  // Productivité Lignes
+  ];
+
+  // Générer le fichier
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  });
+  
+  const dateStr = new Date().toISOString().split('T')[0];
+  saveAs(blob, `productivite-annuelle-${data.annee}-${dateStr}.xlsx`);
+}
+
+/**
+ * Annuler et réinitialiser le formulaire
+ */
+onCancelStatsAnnuelles() {
+  this.resetStatsAnnuellesForm();
+  this.activeTab.set('view');
+}
+
+/**
+ * Réinitialiser le formulaire
+ */
+private resetStatsAnnuellesForm() {
+  this.statsAnnuellesForm = {
+    date: '',
+    errors: {}
+  };
+  this.statsAnnuellesPreview.set(null);
+  this.errorMessage.set(null);
+}
+
 
   phases = signal<any[]>([]);
 selectedPhaseForEdit: any = null;
@@ -2305,6 +2679,7 @@ getTabTitle(): string {
     'add-phase': 'Gestion des Phases',
     'download-phase': 'Télécharger les Rapports de Phase',
     'download-line-summary': 'Résumé par Ligne',
+    'stats-annuelles': 'Productivité Annuelle',
     'view-stats': 'Voir les Statistiques' // Ajouter cette ligne
   };
   return titles[this.activeTab()] || 'PDP - Système de Gestion';

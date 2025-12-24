@@ -1,4 +1,4 @@
-// stats.controller.ts - VERSION MISE À JOUR
+// stats.controller.ts - VERSION CORRIGÉE
 import { 
   Controller, 
   Post, 
@@ -9,13 +9,15 @@ import {
   HttpCode,
   HttpStatus,
   Get,
-  Query
+  Query,
+  BadRequestException
 } from '@nestjs/common';
 import { StatsService } from './stats.service';
 import { GetStatsDto } from './dto/get-stats.dto';
 import { GetStatsLignesDto } from './dto/get-stats-lignes.dto';
 import { GetStatsSemaineDto } from './dto/get-stats-semaine.dto';
 import { GetStatsDateDto } from './dto/get-stats-date.dto';
+import { GetStatsAnnuelDto } from './dto/get-stats-annuel.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('stats')
@@ -76,13 +78,8 @@ export class StatsController {
     return this.statsService.getPourcentage5MParLigne(semaine);
   }
 
-  // ✅ NOUVELLES ROUTES - L'utilisateur envoie SEULEMENT la date
+  // Routes pour stats par date
   
-  /**
-   * Obtenir les statistiques complètes pour une date
-   * POST /stats/par-date
-   * Body: { "date": "2025-12-02" }
-   */
   @Post('par-date')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
@@ -91,10 +88,6 @@ export class StatsController {
     return this.statsService.getStatsParDate(getStatsDateDto);
   }
 
-  /**
-   * Version GET avec query param
-   * GET /stats/par-date?date=2025-12-02
-   */
   @Get('par-date')
   @UseGuards(JwtAuthGuard)
   async getStatsParDateQuery(@Query('date') date: string) {
@@ -103,11 +96,6 @@ export class StatsController {
     return this.statsService.getStatsParDate(dto);
   }
 
-  /**
-   * Obtenir uniquement les rapports de saisie pour une date
-   * POST /stats/rapports-saisie-date
-   * Body: { "date": "2025-12-02" }
-   */
   @Post('rapports-saisie-date')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
@@ -116,15 +104,49 @@ export class StatsController {
     return this.statsService.getRapportsSaisieParDate(getStatsDateDto);
   }
 
-  /**
-   * Version GET
-   * GET /stats/rapports-saisie-date?date=2025-12-02
-   */
   @Get('rapports-saisie-date')
   @UseGuards(JwtAuthGuard)
   async getRapportsSaisieParDateQuery(@Query('date') date: string) {
     const dto = new GetStatsDateDto();
     dto.date = date;
     return this.statsService.getRapportsSaisieParDate(dto);
+  }
+
+  // ✅ NOUVELLES ROUTES - PCS par mois pour toute l'année
+  
+  /**
+   * Obtenir le PCS par mois pour toutes les lignes d'une année
+   * POST /stats/pcs-par-mois
+   * Body: { "date": "2026-01-15" }
+   */
+  @Post('pcs-par-mois')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  @HttpCode(HttpStatus.OK)
+  async getStatsPcsParMois(@Body() getStatsAnnuelDto: GetStatsAnnuelDto) {
+    return this.statsService.getStatsPcsParMoisEtLigne(getStatsAnnuelDto);
+  }
+
+  /**
+   * Version GET avec query param
+   * GET /stats/pcs-par-mois?date=2026-01-15
+   */
+  @Get('pcs-par-mois')
+  @UseGuards(JwtAuthGuard)
+  async getStatsPcsParMoisQuery(@Query('date') date: string) {
+    // ✅ CORRECTION : Valider que date existe
+    if (!date) {
+      throw new BadRequestException('Le paramètre "date" est obligatoire');
+    }
+
+    // Valider le format de la date
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      throw new BadRequestException('Le format de date doit être YYYY-MM-DD (ex: 2026-01-15)');
+    }
+
+    const dto = new GetStatsAnnuelDto();
+    dto.date = date;
+    return this.statsService.getStatsPcsParMoisEtLigne(dto);
   }
 }
