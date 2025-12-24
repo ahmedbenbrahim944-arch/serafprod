@@ -1259,4 +1259,273 @@ private convertirDateEnSemaineEtJour(dateStr: string): { semaine: string; jour: 
       );
     }
   }
+  // src/stats/stats.service.ts - Ajouter cette méthode
+
+/**
+ * ✅ NOUVELLE MÉTHODE : Obtenir les stats 5M par mois pour toute l'année
+ * L'utilisateur envoie une date et on calcule les 5M pour tous les mois de l'année
+ */
+async getStats5MParMois(getStatsAnnuelDto: { date: string }) {
+  const { date } = getStatsAnnuelDto;
+  
+  console.log(`=== CALCUL 5M PAR MOIS POUR ${date} ===`);
+
+  try {
+    // 1. Extraire l'année de la date
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      throw new BadRequestException(`Date invalide: ${date}`);
+    }
+    
+    const annee = dateObj.getFullYear();
+    console.log(`Année extraite: ${annee}`);
+
+    // 2. Définir les 12 mois
+    const moisNoms = [
+      'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+      'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+    ];
+
+    // 3. Récupérer TOUTES les semaines de l'année
+    const debutAnnee = new Date(`${annee}-01-01`);
+    const finAnnee = new Date(`${annee}-12-31`);
+    
+    const semaines = await this.semaineRepository.find({
+      where: {
+        dateDebut: MoreThanOrEqual(debutAnnee) && LessThanOrEqual(finAnnee)
+      }
+    });
+
+    if (semaines.length === 0) {
+      throw new NotFoundException(
+        `Aucune semaine trouvée pour l'année ${annee}`
+      );
+    }
+
+    const nomsSemainesAnnee = semaines.map(s => s.nom);
+    console.log(`Semaines trouvées: ${nomsSemainesAnnee.join(', ')}`);
+
+    // 4. Récupérer toutes les planifications de ces semaines avec leurs non-conformités
+    const planifications = await this.planificationRepository.find({
+      where: nomsSemainesAnnee.map(semaine => ({ semaine })),
+      relations: ['nonConformites'],
+      order: { semaine: 'ASC' }
+    });
+
+    if (planifications.length === 0) {
+      throw new NotFoundException(
+        `Aucune planification trouvée pour l'année ${annee}`
+      );
+    }
+
+    console.log(`Nombre total de planifications: ${planifications.length}`);
+
+    // 5. Créer une map: semaine -> mois (1-12)
+    const semaineVsMois: Record<string, number> = {};
+    semaines.forEach(semaine => {
+      const dateDebut = semaine.dateDebut instanceof Date 
+        ? semaine.dateDebut 
+        : new Date(semaine.dateDebut);
+      
+      const moisNum = dateDebut.getMonth() + 1;
+      semaineVsMois[semaine.nom] = moisNum;
+    });
+
+    // 6. Grouper par mois
+    const statsParMois: Record<number, {
+      totalQteSource: number;
+      matierePremiere: number;
+      absence: number;
+      rendement: number;
+      maintenance: number;
+      qualite: number;
+      total5M: number;
+    }> = {};
+
+    // Initialiser tous les mois
+    for (let m = 1; m <= 12; m++) {
+      statsParMois[m] = {
+        totalQteSource: 0,
+        matierePremiere: 0,
+        absence: 0,
+        rendement: 0,
+        maintenance: 0,
+        qualite: 0,
+        total5M: 0
+      };
+    }
+
+    // 7. Parcourir toutes les planifications
+    planifications.forEach(plan => {
+      const moisNum = semaineVsMois[plan.semaine];
+      
+      if (!moisNum) {
+        console.warn(`Semaine ${plan.semaine} non trouvée dans la map`);
+        return;
+      }
+
+      const qteSource = this.getQuantitySource(plan);
+      statsParMois[moisNum].totalQteSource += qteSource;
+
+      // Ajouter les non-conformités
+      if (plan.nonConformites && plan.nonConformites.length > 0) {
+        const nonConf = plan.nonConformites[0];
+        
+        statsParMois[moisNum].matierePremiere += nonConf.matierePremiere;
+        statsParMois[moisNum].absence += nonConf.absence;
+        statsParMois[moisNum].rendement += nonConf.rendement;
+        statsParMois[moisNum].maintenance += nonConf.maintenance;
+        statsParMois[moisNum].qualite += nonConf.qualite;
+        statsParMois[moisNum].total5M += nonConf.total;
+      }
+    });
+
+    // 8. Calculer les pourcentages pour chaque mois
+    const moisFormates: Record<string, any> = {};
+    let totalAnnuelQteSource = 0;
+    let totalAnnuel5M = 0;
+    let totalAnnuelMatierePremiere = 0;
+    let totalAnnuelAbsence = 0;
+    let totalAnnuelRendement = 0;
+    let totalAnnuelMaintenance = 0;
+    let totalAnnuelQualite = 0;
+
+    for (let m = 1; m <= 12; m++) {
+      const moisNom = moisNoms[m - 1];
+      const data = statsParMois[m];
+
+      // Calculer les pourcentages par rapport à la quantité source
+      const calculerPourcentage = (valeur: number): number => {
+        if (data.totalQteSource <= 0) return 0;
+        return Math.round((valeur / data.totalQteSource) * 100 * 100) / 100;
+      };
+
+      moisFormates[moisNom] = {
+        totalQteSource: data.totalQteSource,
+        total5M: data.total5M,
+        pourcentageTotal5M: calculerPourcentage(data.total5M),
+        matierePremiere: {
+          quantite: data.matierePremiere,
+          pourcentage: calculerPourcentage(data.matierePremiere)
+        },
+        absence: {
+          quantite: data.absence,
+          pourcentage: calculerPourcentage(data.absence)
+        },
+        rendement: {
+          quantite: data.rendement,
+          pourcentage: calculerPourcentage(data.rendement)
+        },
+        maintenance: {
+          quantite: data.maintenance,
+          pourcentage: calculerPourcentage(data.maintenance)
+        },
+        qualite: {
+          quantite: data.qualite,
+          pourcentage: calculerPourcentage(data.qualite)
+        }
+      };
+
+      // Accumuler les totaux annuels
+      totalAnnuelQteSource += data.totalQteSource;
+      totalAnnuel5M += data.total5M;
+      totalAnnuelMatierePremiere += data.matierePremiere;
+      totalAnnuelAbsence += data.absence;
+      totalAnnuelRendement += data.rendement;
+      totalAnnuelMaintenance += data.maintenance;
+      totalAnnuelQualite += data.qualite;
+    }
+
+    // 9. Calculer les moyennes annuelles
+    const calculerPourcentageAnnuel = (valeur: number): number => {
+      if (totalAnnuelQteSource <= 0) return 0;
+      return Math.round((valeur / totalAnnuelQteSource) * 100 * 100) / 100;
+    };
+
+    const moyennesAnnuelles = {
+      totalQteSource: totalAnnuelQteSource,
+      total5M: totalAnnuel5M,
+      pourcentageTotal5M: calculerPourcentageAnnuel(totalAnnuel5M),
+      matierePremiere: {
+        quantite: totalAnnuelMatierePremiere,
+        pourcentage: calculerPourcentageAnnuel(totalAnnuelMatierePremiere),
+        pourcentageDans5M: totalAnnuel5M > 0 ? Math.round((totalAnnuelMatierePremiere / totalAnnuel5M) * 100 * 100) / 100 : 0
+      },
+      absence: {
+        quantite: totalAnnuelAbsence,
+        pourcentage: calculerPourcentageAnnuel(totalAnnuelAbsence),
+        pourcentageDans5M: totalAnnuel5M > 0 ? Math.round((totalAnnuelAbsence / totalAnnuel5M) * 100 * 100) / 100 : 0
+      },
+      rendement: {
+        quantite: totalAnnuelRendement,
+        pourcentage: calculerPourcentageAnnuel(totalAnnuelRendement),
+        pourcentageDans5M: totalAnnuel5M > 0 ? Math.round((totalAnnuelRendement / totalAnnuel5M) * 100 * 100) / 100 : 0
+      },
+      maintenance: {
+        quantite: totalAnnuelMaintenance,
+        pourcentage: calculerPourcentageAnnuel(totalAnnuelMaintenance),
+        pourcentageDans5M: totalAnnuel5M > 0 ? Math.round((totalAnnuelMaintenance / totalAnnuel5M) * 100 * 100) / 100 : 0
+      },
+      qualite: {
+        quantite: totalAnnuelQualite,
+        pourcentage: calculerPourcentageAnnuel(totalAnnuelQualite),
+        pourcentageDans5M: totalAnnuel5M > 0 ? Math.round((totalAnnuelQualite / totalAnnuel5M) * 100 * 100) / 100 : 0
+      }
+    };
+
+    // 10. Préparer les données pour les graphiques
+    const donneesGraphiques = {
+      // Pour le graphique circulaire (répartition des causes)
+      graphiqueCirculaire: {
+        labels: ['Matière Première', 'Absence', 'Rendement', 'Maintenance', 'Qualité'],
+        values: [
+          moyennesAnnuelles.matierePremiere.pourcentageDans5M,
+          moyennesAnnuelles.absence.pourcentageDans5M,
+          moyennesAnnuelles.rendement.pourcentageDans5M,
+          moyennesAnnuelles.maintenance.pourcentageDans5M,
+          moyennesAnnuelles.qualite.pourcentageDans5M
+        ]
+      },
+      // Pour le graphique en barres (% général arrêt par mois)
+      graphiqueBarres: {
+        labels: moisNoms,
+        values: moisNoms.map(mois => moisFormates[mois].pourcentageTotal5M)
+      }
+    };
+
+    // 11. Tableau récapitulatif
+    const tableauRecapitulatif = moisNoms.map(mois => ({
+      mois: mois,
+      matierePremiere: moisFormates[mois].matierePremiere.pourcentage,
+      absence: moisFormates[mois].absence.pourcentage,
+      rendement: moisFormates[mois].rendement.pourcentage,
+      maintenance: moisFormates[mois].maintenance.pourcentage,
+      qualite: moisFormates[mois].qualite.pourcentage,
+      total5M: moisFormates[mois].pourcentageTotal5M
+    }));
+
+    console.log(`=== FIN CALCUL 5M PAR MOIS POUR ${date} ===`);
+
+    return {
+      message: `Statistiques 5M par mois pour l'année ${annee}`,
+      annee,
+      dateCalcul: new Date().toISOString(),
+      mois: moisFormates,
+      moyennesAnnuelles,
+      donneesGraphiques,
+      tableauRecapitulatif
+    };
+
+  } catch (error) {
+    console.error(`Erreur dans getStats5MParMois:`, error);
+    
+    if (error instanceof BadRequestException || error instanceof NotFoundException) {
+      throw error;
+    }
+    
+    throw new InternalServerErrorException(
+      `Erreur lors du calcul des stats 5M par mois: ${error.message}`
+    );
+  }
+}
 }

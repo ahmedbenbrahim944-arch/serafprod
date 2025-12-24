@@ -253,28 +253,27 @@
     
     <ng-container *ngFor="let day of weekDays; let i = index">
       <th class="text-center border-2 border-gray-700 day-header" colspan="1">
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
-          <div class="text-center">
-            <div class="font-bold text-cyan-400 capitalize text-sm sm:text-base">{{ day }}</div>
-            <div class="text-xs sm:text-sm text-gray-300 mt-1">{{ getDayDateCorrected(weekDays[i], i) | date:'dd/MM' }}</div>
-          </div>
-        </div>
-      </th>
+  <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
+    <div class="text-center">
+      <div class="font-bold text-cyan-400 capitalize text-sm sm:text-base">{{ day }}</div>
+      <!-- CHANGER text-gray-300 EN text-black -->
+      <div class="text-xs sm:text-sm text-black mt-1">{{ getDayDateCorrected(weekDays[i], i) | date:'dd/MM' }}</div>
+    </div>
+  </div>
+</th>
     </ng-container>
   </tr>
   <tr>
     <ng-container *ngFor="let day of weekDays; let i = index">
-      <th class="text-center border-2 border-gray-700 day-header">
-        <div class="flex flex-col items-center justify-center px-2 py-2">
-          <span class="text-xs sm:text-sm text-gray-300 font-bold mb-1">NB OP</span>
-          <!-- Carte bleue pour le nombre d'opérateurs dans l'en-tête -->
-          <div class="bg-cyan-600/60 border-2 border-cyan-400 rounded-lg px-3 py-1.5 min-w-[50px]">
-            <span class="text-white font-bold text-base">
-              {{ getFirstNbOperateurs(day) }}
-            </span>
-          </div>
-        </div>
-      </th>
+     <th class="text-center border-2 day-header">
+  <div class="flex flex-col items-center justify-center px-2 py-2">
+    <span class="text-xs sm:text-sm text-black font-bold mb-1">NB OP</span>
+    <!-- REMPLACER LA CARTE BLEUE PAR UN SIMPLE SPAN -->
+    <span class="text-black font-bold text-base">
+      {{ getFirstNbOperateurs(day) }}
+    </span>
+  </div>
+</th>
     </ng-container>
   </tr>
 </thead>
@@ -448,8 +447,8 @@
             <thead>
   <tr>
     <th class="sticky left-0 z-20 sticky-cell border-2 border-gray-700" rowspan="2">RÉFÉRENCES</th>
-    <th class="text-center border-2 border-gray-700" rowspan="2">C/R</th>
-    <th class="text-center border-2 border-gray-700" rowspan="2">OF</th>
+    <th class="text-center border-2 border-gray-700 font-bold" rowspan="2">C/R</th>
+    <th class="text-center border-2 border-gray-700 font-bold" rowspan="2">OF</th>
     
     <ng-container *ngFor="let day of weekDays; let i = index">
       <th class="text-center border-2 border-gray-700 day-header" colspan="1">
@@ -464,9 +463,9 @@
   </tr>
   <tr>
     <ng-container *ngFor="let day of weekDays; let i = index">
-      <th class="text-center border-2 border-gray-700 day-header">
+      <th class="text-center border-2  day-header">
         <div class="flex flex-col items-center justify-center px-2 py-2">
-          <span class="text-xs sm:text-sm text-gray-300 font-bold mb-1">NB OP</span>
+          <span class="text-xs sm:text-sm  font-bold mb-1">NB OP</span>
           <!-- Carte bleue pour le nombre d'opérateurs dans l'en-tête -->
           <div class="bg-cyan-600/60 border-2 border-cyan-400 rounded-lg px-3 py-1.5 min-w-[50px]">
             <span class="text-white font-bold text-base">

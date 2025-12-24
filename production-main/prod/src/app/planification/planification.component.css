@@ -14,6 +14,10 @@
   border-bottom: 1px solid #e2e8f0;
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  color: #57E809 !important;
+}
+.h1{
+    color: #57E809 !important;
 }
 
 /* ==================== TABLEAU HEBDOMADAIRE - STYLE SIMPLE ET CLAIR ==================== */
@@ -33,7 +37,7 @@
   background: #f1f5f9 !important;
   padding: 6px 8px !important;
   font-weight: 100;
-  color: #090c11;
+  color: #57E809 !important;
   border: 1px solid #e2e8f0 !important;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -43,6 +47,7 @@
   z-index: 15;
   text-align: center;
   line-height: 0;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
 /* Cellules du tableau - Lignes invisibles */
@@ -106,7 +111,7 @@
   background: #f8fafc !important;
   font-weight: 600;
   font-size: 0.75rem !important;
-  color: #0ea5e9 !important;
+  color: #57E809 !important;
   position: sticky;
   left: 0;
   z-index: 10;
@@ -116,6 +121,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
 /* Style pour les inputs */
@@ -135,7 +141,7 @@
 
 .week-planning-table input:focus {
   background: #ffffff !important;
-  border-color: #0ea5e9 !important;
+  border-color: #e90e0e !important;
   outline: none;
   box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
 }
@@ -145,7 +151,7 @@
   font-size: 0.813rem !important;
   font-weight: 600;
   padding: 3px 0 !important;
-  color: #475569 !important;
+  color: #000000 !important;
 }
 
 /* Style pour les pourcentages delta */
@@ -183,16 +189,16 @@
   font-size: 0.625rem !important;
   font-weight: 600 !important;
   padding: 6px 4px !important;
-  color: #0ea5e9 !important;
+  color: #57E809 !important;
   background: #f1f5f9 !important;
   line-height: 0.5;
 }
 
 .day-header .nb-operateurs {
-  font-size: 0.625rem;
+  font-size: 2rem;
   margin-top: 2px;
   font-weight: 600;
-  color: #64748b;
+  color: #000000;
   display: block;
 }
 
@@ -200,7 +206,7 @@
   font-size: 0.563rem;
   margin-top: 1px;
   font-weight: 500;
-  color: #94a3b8;
+  color: #000000;
   display: block;
 }
 
@@ -208,7 +214,7 @@
 .reference-cell {
   font-size: 0.813rem !important;
   font-weight: 600 !important;
-  color: #0ea5e9 !important;
+  color: #e90e0e !important;
   background: #f8fafc !important;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -245,7 +251,7 @@
   transform: rotate(180deg);
   font-weight: 600;
   font-size: 0.625rem;
-  color: #0ea5e9;
+  color: #e90e0e;
   text-orientation: mixed;
 }
 
@@ -254,7 +260,7 @@
   transform: rotate(180deg);
   font-size: 0.813rem !important;
   font-weight: 600 !important;
-  color: #334155 !important;
+  color: #cf1313 !important;
   background: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 3px;
@@ -277,8 +283,9 @@
   transform: rotate(180deg);
   font-size: 0.813rem;
   font-weight: 600;
-  color: #475569;
+  color: #000000;
   text-orientation: mixed;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
 /* ==================== CARTES DE LIGNES ==================== */
@@ -546,7 +553,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(243, 239, 239, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -745,13 +752,56 @@
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 .week-planning-table tbody tr:nth-child(5n+1) td:not(.sticky-cell) {
-    background: #2687d6 !important;
-    border-top: 1px solid #033164 !important;
-    border-bottom: 1px solid #93c5fd !important;
-    border-left: 1px solid #93c5fd !important;
-    border-right: 1px solid #93c5fd !important;
+    background: #D4D9D2 !important;
+  
 }
 .week-planning-table tbody tr:nth-child(5n+1) td:not(.sticky-cell) .value-display {
     color: #0d0d0e !important;
-    font-weight: 900 !important;
+   
 }
+/* ==================== CHANGEMENTS POUR COULEUR VERTE #57E809 ==================== */
+
+/* 1. TITRE "PLANIFICATION DES LIGNES" */
+.text-center h1 {
+  color: #57E809 !important;
+}
+
+/* Alternative si la classe est différente */
+
+
+/* 2. TITRE DE LA LIGNE (ex: "L39:A.C POLO XT5") */
+.text-cyan-400 {
+  color: #57E809 !important;
+}
+
+/* Dans la sidebar */
+.mb-4.sm\\:mb-6.p-3.sm\\:p-4 h3 {
+  color: #57E809 !important;
+}
+
+/* 3. JOURS DE LA SEMAINE (Lundi, Mardi, etc.) */
+.day-header .date-display {
+  color: #000000 !important;
+}
+
+/* Alternative si classe différente */
+.day-header .text-xs.sm\\:text-sm.text-gray-300.mt-1 {
+  color: #000000 !important;
+}
+
+/* Label "NB OP" */
+.day-header .text-xs.sm\\:text-sm.text-gray-300.font-bold.mb-1 {
+  color: #000000 !important;
+}
+
+/* Valeur du nombre d'opérateurs dans la carte bleue */
+.day-header .nb-operateurs {
+  color: #000000 !important;
+}
+
+/* Alternative plus spécifique */
+
+
+/* ==================== STYLES ADDITIONNELS POUR COHÉRENCE ==================== */
+
+/* Boutons et éléments interactifs en vert */

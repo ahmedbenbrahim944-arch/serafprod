@@ -149,4 +149,11 @@ export class StatsController {
     dto.date = date;
     return this.statsService.getStatsPcsParMoisEtLigne(dto);
   }
+  @Post('5m-par-mois')
+@UseGuards(JwtAuthGuard)
+@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+@HttpCode(HttpStatus.OK)
+async getStats5MParMois(@Body() getStatsAnnuelDto: GetStatsAnnuelDto) {
+  return this.statsService.getStats5MParMois(getStatsAnnuelDto);
+}
 }
