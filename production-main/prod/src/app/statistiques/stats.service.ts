@@ -41,6 +41,36 @@ export interface OuvrierSaisie {
   nbPhases?: number;
   phases?: any;
 }
+// stats.service.ts (Angular - À ajouter aux méthodes existantes)
+
+// Interface pour l'affectation du personnel
+export interface JourAffectation {
+  jour: string;
+  nbPlanifie: number;
+  nbSaisi: number;
+  difference: number;
+  statut: 'CONFORME' | 'NON_CONFORME';
+  message: string;
+}
+
+export interface LigneAffectation {
+  ligne: string;
+  jours: JourAffectation[];
+}
+
+export interface AffectationPersonnelResponse {
+  message: string;
+  semaine: string;
+  dateCalcul: string;
+  statistiquesGlobales: {
+    totalPlanifie: number;
+    totalSaisi: number;
+    difference: number;
+    nbNonConformites: number;
+    tauxConformite: string;
+  };
+  lignes: LigneAffectation[];
+}
 
 
 
@@ -325,5 +355,10 @@ getRapportsSaisieParDate(date: string): Observable<StatsSaisieResponse> {
     params: { date },
     headers
   });
+}
+getAffectationPersonnel(semaine: string): Observable<AffectationPersonnelResponse> {
+  return this.http.get<AffectationPersonnelResponse>(
+    `${this.apiUrl}/affectation-personnel?semaine=${semaine}`
+  );
 }
 }

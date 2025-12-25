@@ -1528,4 +1528,163 @@ async getStats5MParMois(getStatsAnnuelDto: { date: string }) {
     );
   }
 }
+async getAffectationPersonnel(semaine: string) {
+  try {
+    console.log(`=== CALCUL AFFECTATION PERSONNEL POUR ${semaine} ===`);
+
+    // 1. Récupérer toutes les planifications pour cette semaine avec agrégation par ligne/jour
+    const planificationsAgregees = await this.planificationRepository
+      .createQueryBuilder('plan')
+      .select('plan.ligne', 'ligne')
+      .addSelect('plan.jour', 'jour')
+      .addSelect('SUM(plan.nbOperateurs)', 'totalNbOperateurs')
+      .where('plan.semaine = :semaine', { semaine })
+      .groupBy('plan.ligne')
+      .addGroupBy('plan.jour')
+      .getRawMany();
+
+    if (planificationsAgregees.length === 0) {
+      throw new NotFoundException(
+        `Aucune planification trouvée pour la semaine ${semaine}`
+      );
+    }
+
+    console.log(`Planifications agrégées trouvées: ${planificationsAgregees.length}`);
+
+    // 2. Créer une map pour accès rapide aux planifications
+    const planifMap = new Map<string, number>();
+    planificationsAgregees.forEach(p => {
+      const key = `${p.ligne}-${p.jour}`;
+      // Arrondir le total des nbOperateurs
+      const nbOp = Math.round(parseFloat(p.totalNbOperateurs) || 0);
+      planifMap.set(key, nbOp);
+      console.log(`  ${key}: ${nbOp} opérateurs planifiés`);
+    });
+
+    // 3. Récupérer toutes les saisies de rapport pour cette semaine
+    const saisies = await this.saisieRapportRepository
+      .createQueryBuilder('saisie')
+      .select('saisie.ligne', 'ligne')
+      .addSelect('saisie.jour', 'jour')
+      .addSelect('COUNT(DISTINCT saisie.matricule)', 'nbOperateurs')
+      .where('saisie.semaine = :semaine', { semaine })
+      .groupBy('saisie.ligne')
+      .addGroupBy('saisie.jour')
+      .getRawMany();
+
+    console.log(`Saisies trouvées: ${saisies.length}`);
+
+    // 4. Créer une map pour accès rapide aux saisies
+    const saisiesMap = new Map<string, number>();
+    saisies.forEach(s => {
+      const key = `${s.ligne}-${s.jour}`;
+      const nbOp = parseInt(s.nbOperateurs);
+      saisiesMap.set(key, nbOp);
+      console.log(`  ${key}: ${nbOp} opérateurs ont saisi`);
+    });
+
+    // 5. Obtenir toutes les lignes uniques
+    const lignesUniques = new Set<string>();
+    planificationsAgregees.forEach(p => lignesUniques.add(p.ligne));
+
+    // 6. Pour chaque ligne, calculer les stats par jour
+    const jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const lignes: any[] = [];
+    
+    lignesUniques.forEach(ligne => {
+      const joursData: any[] = [];
+      
+      jours.forEach(jour => {
+        const key = `${ligne}-${jour}`;
+        
+        // Récupérer le nombre d'opérateurs planifiés (somme des nbOperateurs)
+        const nbPlanifie = planifMap.get(key) || 0;
+        
+        // Récupérer le nombre d'opérateurs qui ont saisi
+        const nbSaisi = saisiesMap.get(key) || 0;
+        
+        // Calculer la différence
+        const difference = nbSaisi - nbPlanifie;
+        
+        // Déterminer le statut et le message
+        let statut: string;
+        let message: string;
+        
+        if (difference === 0) {
+          statut = 'CONFORME';
+          message = 'Bon';
+        } else if (difference > 0) {
+          statut = 'NON_CONFORME';
+          message = `Non-conformité : +${difference} opérateur${difference > 1 ? 's' : ''}`;
+        } else {
+          statut = 'NON_CONFORME';
+          message = `Non-conformité : ${difference} opérateur${Math.abs(difference) > 1 ? 's' : ''}`;
+        }
+        
+        // Ajouter les données du jour
+        joursData.push({
+          jour,
+          nbPlanifie,
+          nbSaisi,
+          difference,
+          statut,
+          message
+        });
+      });
+      
+      lignes.push({
+        ligne,
+        jours: joursData
+      });
+    });
+
+    // 7. Calculer les statistiques globales
+    let totalPlanifie = 0;
+    let totalSaisi = 0;
+    let nbNonConformites = 0;
+    
+    lignes.forEach(ligne => {
+      ligne.jours.forEach((jour: any) => {
+        totalPlanifie += jour.nbPlanifie;
+        totalSaisi += jour.nbSaisi;
+        if (jour.statut === 'NON_CONFORME') {
+          nbNonConformites++;
+        }
+      });
+    });
+
+    const tauxConformite = totalPlanifie > 0 
+      ? Math.round(((totalPlanifie - Math.abs(totalSaisi - totalPlanifie)) / totalPlanifie) * 100 * 100) / 100
+      : 0;
+
+    console.log(`=== FIN CALCUL AFFECTATION PERSONNEL ===`);
+    console.log(`Total planifié: ${totalPlanifie}, Total saisi: ${totalSaisi}`);
+    console.log(`Non-conformités: ${nbNonConformites}`);
+
+    return {
+      message: `Affectation du personnel pour la semaine ${semaine}`,
+      semaine,
+      dateCalcul: new Date().toISOString(),
+      statistiquesGlobales: {
+        totalPlanifie,
+        totalSaisi,
+        difference: totalSaisi - totalPlanifie,
+        nbNonConformites,
+        tauxConformite: `${tauxConformite}%`
+      },
+      lignes
+    };
+
+  } catch (error) {
+    console.error(`Erreur dans getAffectationPersonnel:`, error);
+    
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+    
+    throw new InternalServerErrorException(
+      `Erreur lors du calcul de l'affectation du personnel: ${error.message}`
+    );
+  }
+}
 }

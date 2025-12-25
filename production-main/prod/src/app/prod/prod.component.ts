@@ -22,6 +22,7 @@ import { StatsService } from './stats.service';
 import { ChartService } from './chart.service';
 import { Chart } from 'chart.js';
 import { StatsAnnuelService, StatsAnnuellesResponse } from './stats-annuel.service';
+import { Stats5MAnnuelService , Stats5MAnnuellesResponse} from '../prod/stats-5m-annuel.service';
 
 
 
@@ -162,6 +163,7 @@ export class ProdComponent implements OnInit {
   private statsService = inject(StatsService); 
   private chartService = inject(ChartService);
   private statsAnnuelService = inject(StatsAnnuelService);
+  private stats5MAnnuelService = inject(Stats5MAnnuelService);
 
   showImageUploadModal = false;
   selectedLineImage: File | null = null;
@@ -239,6 +241,12 @@ statsData = signal<any>(null);
   errors: {}
 };
 
+stats5MAnnuellesForm: StatsAnnuellesForm = {
+  date: '',
+  errors: {}
+};
+stats5MAnnuellesPreview = signal<Stats5MAnnuellesResponse | null>(null);
+
   userForm: UserForm = {
     nom: '',
     prenom: '',
@@ -309,6 +317,38 @@ statsData = signal<any>(null);
     this.loadStatsAnnuellesPreview(date);
   }
 });
+effect(() => {
+  const date = this.stats5MAnnuellesForm.date;
+  if (date && date.trim()) {
+    this.loadStats5MAnnuellesPreview(date);
+  }
+});
+}
+private loadStats5MAnnuellesPreview(date: string) {
+  if (!date || !date.trim()) {
+    this.stats5MAnnuellesPreview.set(null);
+    return;
+  }
+
+  this.loading.set(true);
+  
+  this.stats5MAnnuelService.getStats5MParMois(date.trim())
+    .pipe(
+      takeUntilDestroyed(this.destroyRef),
+      catchError(error => {
+        console.error('Erreur chargement aperçu stats 5M:', error);
+        this.stats5MAnnuellesPreview.set(null);
+        return of(null);
+      }),
+      finalize(() => this.loading.set(false))
+    )
+    .subscribe({
+      next: (data) => {
+        if (data) {
+          this.stats5MAnnuellesPreview.set(data);
+        }
+      }
+    });
 }
 private loadStatsAnnuellesPreview(date: string) {
   if (!date || !date.trim()) {
@@ -482,14 +522,14 @@ private async generateStatsAnnuellesExcel(data: StatsAnnuellesResponse): Promise
   worksheet.getCell('M3').alignment = { horizontal: 'right' };
 
   // URL (ligne 4)
-  const urlRow = worksheet.addRow(['https://gwa001.it.abb.com/suppliers']);
+  const urlRow = worksheet.addRow(['']);
   const urlCell = urlRow.getCell(1);
   urlCell.font = { size: 10, color: { argb: '0000FF' }, underline: true };
   urlCell.alignment = { horizontal: 'center' };
   worksheet.mergeCells(4, 1, 4, 15);
 
   // Pilote (ligne 4 - colonne M)
-  worksheet.getCell('M4').value = 'Pilote : Y.Mohamed';
+  worksheet.getCell('M4').value = '';
   worksheet.getCell('M4').alignment = { horizontal: 'right' };
 
   // En-têtes des colonnes (ligne 5)
@@ -2846,5 +2886,304 @@ async exportCharts() {
       this.errorMessage.set('Erreur lors de l\'export des graphiques');
     }
   }
+  async onDownloadStats5MAnnuelles() {
+  // Validation
+  this.stats5MAnnuellesForm.errors = {};
+  let hasErrors = false;
+
+  if (!this.stats5MAnnuellesForm.date.trim()) {
+    this.stats5MAnnuellesForm.errors.date = 'La date est requise';
+    hasErrors = true;
+  } else {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(this.stats5MAnnuellesForm.date)) {
+      this.stats5MAnnuellesForm.errors.date = 'Format de date invalide (YYYY-MM-DD requis)';
+      hasErrors = true;
+    }
+  }
+
+  if (hasErrors) return;
+
+  this.loading.set(true);
+  this.errorMessage.set(null);
+
+  try {
+    // Récupérer les données
+    const data = await this.getStats5MAnnuelles(this.stats5MAnnuellesForm.date.trim());
+    
+    if (!data) {
+      this.errorMessage.set('Aucune donnée disponible pour cette année');
+      this.loading.set(false);
+      return;
+    }
+
+    // Générer le fichier Excel
+    await this.generateStats5MAnnuellesExcel(data);
+    
+    this.showSuccessMessage(`Statistiques 5M annuelles ${data.annee} téléchargées avec succès !`);
+    
+  } catch (error: any) {
+    console.error('Erreur lors du téléchargement:', error);
+    
+    if (error.status === 404) {
+      this.errorMessage.set(`Aucune donnée trouvée pour l'année sélectionnée`);
+    } else {
+      this.errorMessage.set(error.message || 'Erreur lors de la génération du rapport');
+    }
+  } finally {
+    this.loading.set(false);
+  }
+}
+
+/**
+ * Récupérer les données depuis l'API
+ */
+private getStats5MAnnuelles(date: string): Promise<Stats5MAnnuellesResponse> {
+  return new Promise((resolve, reject) => {
+    this.stats5MAnnuelService.getStats5MParMois(date)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(error => {
+          reject(error);
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          if (response) {
+            resolve(response);
+          } else {
+            reject(new Error('Aucune donnée reçue'));
+          }
+        },
+        error: (error) => {
+          reject(error);
+        }
+      });
+  });
+}
+
+/**
+ * Générer le fichier Excel pour les stats 5M
+ */
+private async generateStats5MAnnuellesExcel(data: Stats5MAnnuellesResponse): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(`Non Productivité ${data.annee}`);
+  
+  const moisNoms = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+  ];
+  
+  const moisAbrev = [
+    'janv', 'févr', 'mars', 'avr', 'mai', 'juin',
+    'juil', 'août', 'sept', 'oct', 'nov', 'déc'
+  ];
+
+  // Ligne 1: Titre principal
+  const titleRow = worksheet.addRow(['Non Productivité']);
+  titleRow.height = 40;
+  const titleCell = titleRow.getCell(1);
+  titleCell.font = { 
+    bold: true, 
+    size: 18,
+    color: { argb: '000000' }
+  };
+  titleCell.alignment = { 
+    vertical: 'middle', 
+    horizontal: 'center' 
+  };
+  worksheet.mergeCells(1, 1, 1, 15);
+
+  // Ligne 2: Sous-titre
+  const subtitleRow = worksheet.addRow(["Efficience Main d'œuvre"]);
+  subtitleRow.height = 25;
+  const subtitleCell = subtitleRow.getCell(1);
+  subtitleCell.font = { size: 12 };
+  subtitleCell.alignment = { horizontal: 'center' };
+  worksheet.mergeCells(2, 1, 2, 15);
+
+  // Ligne 3: URL et TdB
+  const urlRow = worksheet.addRow(['']);
+  const urlCell = urlRow.getCell(1);
+  urlCell.font = { size: 10, color: { argb: '0000FF' }, underline: true };
+  urlCell.alignment = { horizontal: 'center' };
+  worksheet.mergeCells(3, 1, 3, 12);
+  
+  worksheet.getCell('M3').value = 'TdB';
+  worksheet.getCell('M3').alignment = { horizontal: 'right' };
+
+  // Ligne 4: Pilote
+  const piloteRow = worksheet.addRow(['']);
+  worksheet.getCell('M4').value = '';
+  worksheet.getCell('M4').alignment = { horizontal: 'right' };
+
+  // Ligne 5: En-têtes des colonnes
+  const headers = [
+    'Causes',
+    ...moisAbrev.map(m => `${m}-${String(data.annee).slice(-2)}`),
+    'Tot'
+  ];
+  
+  const headerRow = worksheet.addRow(headers);
+  headerRow.height = 30;
+  
+  headerRow.eachCell((cell) => {
+    cell.font = { 
+      bold: true, 
+      size: 10,
+      color: { argb: '000000' }
+    };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'D3D3D3' }
+    };
+    cell.alignment = { 
+      vertical: 'middle', 
+      horizontal: 'center',
+      wrapText: true
+    };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+
+  // Données des 5M
+  const causesData = [
+    {
+      label: '% M1:Matière première',
+      key: 'matierePremiere',
+      total: data.moyennesAnnuelles.matierePremiere.pourcentage
+    },
+    {
+      label: '% M5:Qualité',
+      key: 'qualite',
+      total: data.moyennesAnnuelles.qualite.pourcentage
+    },
+    {
+      label: '% M2:absence',
+      key: 'absence',
+      total: data.moyennesAnnuelles.absence.pourcentage
+    },
+    {
+      label: '% M4:maintenance',
+      key: 'maintenance',
+      total: data.moyennesAnnuelles.maintenance.pourcentage
+    },
+    {
+      label: '% M2:Rendement',
+      key: 'rendement',
+      total: data.moyennesAnnuelles.rendement.pourcentage
+    }
+  ];
+
+  causesData.forEach((cause, index) => {
+    const rowData = [
+      cause.label,
+      ...moisNoms.map(mois => {
+        const moisData = data.mois[mois];
+        const value = moisData?.[cause.key as keyof typeof moisData];
+        const pourcentage = typeof value === 'object' && value !== null 
+          ? (value as any).pourcentage 
+          : 0;
+        return pourcentage > 0 ? `${pourcentage.toFixed(2)}%` : '';
+      }),
+      `${cause.total.toFixed(2)}%`
+    ];
+    
+    const dataRow = worksheet.addRow(rowData);
+    
+    dataRow.eachCell((cell, colNumber) => {
+      cell.alignment = { 
+        vertical: 'middle', 
+        horizontal: colNumber === 1 ? 'left' : 'center'
+      };
+      
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      
+      if (index % 2 === 0) {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'F8F9FA' }
+        };
+      }
+    });
+  });
+
+  // Ligne GÉNÉRAL (somme de tous les 5M)
+  const generalRow = worksheet.addRow([
+    '% Général',
+    ...moisNoms.map(mois => {
+      const pourcentage = data.mois[mois]?.pourcentageTotal5M || 0;
+      return pourcentage > 0 ? `${pourcentage.toFixed(2)}%` : '';
+    }),
+    `${data.moyennesAnnuelles.pourcentageTotal5M.toFixed(2)}%`
+  ]);
+  
+  generalRow.eachCell((cell) => {
+    cell.font = { bold: true, size: 10 };
+    cell.alignment = { 
+      vertical: 'middle', 
+      horizontal: cell.address.includes('A') ? 'left' : 'center'
+    };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD700' }
+    };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+
+  // Ajuster les largeurs des colonnes
+  worksheet.columns = [
+    { width: 22 },  // Causes
+    ...Array(12).fill({ width: 10 }), // Mois
+    { width: 10 }   // Tot
+  ];
+
+  // Générer le fichier
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  });
+  
+  const dateStr = new Date().toISOString().split('T')[0];
+  saveAs(blob, `non-productivite-annuelle-${data.annee}-${dateStr}.xlsx`);
+}
+
+/**
+ * Annuler et réinitialiser le formulaire 5M
+ */
+onCancelStats5MAnnuelles() {
+  this.resetStats5MAnnuellesForm();
+  this.activeTab.set('view');
+}
+
+/**
+ * Réinitialiser le formulaire 5M
+ */
+private resetStats5MAnnuellesForm() {
+  this.stats5MAnnuellesForm = {
+    date: '',
+    errors: {}
+  };
+  this.stats5MAnnuellesPreview.set(null);
+  this.errorMessage.set(null);
+}
 
 }

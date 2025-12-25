@@ -225,6 +225,9 @@
               </div>
             </div>
           </div>
+          <p class="text-black"> C : commander / M : Modifier / DP : Déclaration production / DM : Déclaration Magasin / Δ : Delta /
+            NB OP : Nombre d'opérateurs
+          </p>
 
           <!-- Tableau de planification -->
           <div *ngIf="filteredWeekPlanification()" 
@@ -252,10 +255,10 @@
     <th class="text-center border-2 font-bold border-gray-700" rowspan="2">OF</th>
     
     <ng-container *ngFor="let day of weekDays; let i = index">
-      <th class="text-center border-2 border-gray-700 day-header" colspan="1">
+      <th class="text-center  day-header" colspan="1">
   <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
     <div class="text-center">
-      <div class="font-bold text-cyan-400 capitalize text-sm sm:text-base">{{ day }}</div>
+      <div class=" text-cyan-400 capitalize text-sm sm:text-base">{{ day }}</div>
       <!-- CHANGER text-gray-300 EN text-black -->
       <div class="text-xs sm:text-sm text-black mt-1">{{ getDayDateCorrected(weekDays[i], i) | date:'dd/MM' }}</div>
     </div>
@@ -265,11 +268,11 @@
   </tr>
   <tr>
     <ng-container *ngFor="let day of weekDays; let i = index">
-     <th class="text-center border-2 day-header">
-  <div class="flex flex-col items-center justify-center px-2 py-2">
-    <span class="text-xs sm:text-sm text-black font-bold mb-1">NB OP</span>
+     <th class="text-center ">
+  <div class="text-black  text-base">
+    <span class="text-xs sm:text-sm text-black  mb-1">NB OP</span>
     <!-- REMPLACER LA CARTE BLEUE PAR UN SIMPLE SPAN -->
-    <span class="text-black font-bold text-base">
+    <span class="text-black  text-base">
       {{ getFirstNbOperateurs(day) }}
     </span>
   </div>

@@ -19,6 +19,7 @@ import { GetStatsSemaineDto } from './dto/get-stats-semaine.dto';
 import { GetStatsDateDto } from './dto/get-stats-date.dto';
 import { GetStatsAnnuelDto } from './dto/get-stats-annuel.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GetAffectationPersonnelDto } from './dto/get-affectation-personnel.dto';
 
 @Controller('stats')
 export class StatsController {
@@ -155,5 +156,25 @@ export class StatsController {
 @HttpCode(HttpStatus.OK)
 async getStats5MParMois(@Body() getStatsAnnuelDto: GetStatsAnnuelDto) {
   return this.statsService.getStats5MParMois(getStatsAnnuelDto);
+}
+@Post('affectation-personnel')
+@UseGuards(JwtAuthGuard)
+@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+@HttpCode(HttpStatus.OK)
+async getAffectationPersonnel(@Body() dto: GetAffectationPersonnelDto) {
+  return this.statsService.getAffectationPersonnel(dto.semaine);
+}
+
+/**
+ * Version GET avec query param
+ * GET /stats/affectation-personnel?semaine=semaine5
+ */
+@Get('affectation-personnel')
+@UseGuards(JwtAuthGuard)
+async getAffectationPersonnelQuery(@Query('semaine') semaine: string) {
+  if (!semaine) {
+    throw new BadRequestException('Le paramètre "semaine" est obligatoire');
+  }
+  return this.statsService.getAffectationPersonnel(semaine);
 }
 }

@@ -5,7 +5,8 @@ import {
   StatsService, 
   Pourcentage5MResponse,
   Pourcentage5MParLigneResponse,
-  Ligne5MStats
+  Ligne5MStats,
+  AffectationPersonnelResponse // ✅ Ajouté
 } from './stats.service';
 import { Chart, registerables } from 'chart.js';
 import { Router } from '@angular/router';
@@ -46,6 +47,11 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   showStats: boolean = false;
 
+  // ✅ NOUVELLES PROPRIÉTÉS - Affectation Personnel
+  affectationPersonnel: AffectationPersonnelResponse | null = null;
+  isLoadingAffectation: boolean = false;
+  showAffectation: boolean = false;
+
   // Propriétés pour le filtre par date
   dateSelectionnee: string = '';
   maxDate: string = '';
@@ -55,6 +61,8 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
   statsLignesDate: LigneStats[] = [];
   showNonSaisieList: boolean = false;
   showSaisieDetails: boolean = false;
+  showResultatsSemaine: boolean = false;
+  showResultatsDate: boolean = false;
 
   // Propriétés pour les 5M par ligne (semaine uniquement)
   stats5MParLigneData: Ligne5MStats[] = [];
@@ -67,11 +75,11 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
 
   // Couleurs pour les 5M
   private readonly couleurs5M = {
-    matierePremiere: '#ef4444',  // Rouge
-    absence: '#f59e0b',          // Orange
-    rendement: '#10b981',        // Vert
-    maintenance: '#3b82f6',      // Bleu
-    qualite: '#8b5cf6'           // Violet
+    matierePremiere: '#ef4444',
+    absence: '#f59e0b',
+    rendement: '#10b981',
+    maintenance: '#3b82f6',
+    qualite: '#8b5cf6'
   };
 
   constructor(private statsService: StatsService, private router: Router) {}
@@ -90,6 +98,48 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * ✅ NOUVELLE MÉTHODE - Charger l'affectation du personnel
+   */
+  chargerAffectationPersonnel(): void {
+    if (!this.semaineSelectionnee) {
+      alert('Veuillez sélectionner une semaine');
+      return;
+    }
+
+    this.isLoadingAffectation = true;
+    this.showAffectation = false;
+
+    this.statsService.getAffectationPersonnel(this.semaineSelectionnee).subscribe({
+      next: (response) => {
+        this.affectationPersonnel = response;
+        this.isLoadingAffectation = false;
+        this.showAffectation = true;
+        console.log('✅ Affectation personnel chargée:', response);
+      },
+      error: (error) => {
+        console.error('❌ Erreur chargement affectation:', error);
+        this.isLoadingAffectation = false;
+        alert('Erreur lors du chargement de l\'affectation du personnel');
+      }
+    });
+  }
+
+  /**
+   * ✅ MÉTHODE UTILITAIRE - Obtenir la couleur selon le statut
+   */
+  getCellColor(statut: string): string {
+    return statut === 'CONFORME' ? '#d1fae5' : '#fee2e2'; // Vert clair / Rouge clair
+  }
+
+  /**
+   * ✅ MÉTHODE UTILITAIRE - Obtenir la couleur du texte delta
+   */
+  getDeltaColor(difference: number): string {
+    if (difference === 0) return '#10b981'; // Vert
+    return '#ef4444'; // Rouge
+  }
+
+  /**
    * Charger les statistiques par semaine
    */
   chargerStatistiques(): void {
@@ -99,9 +149,6 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading = true;
-    this.showStats = false;
-    this.showStatsDate = false; // Masquer les stats par date
-    this.ligneSelectionnee = null;
     
     forkJoin({
       lignes: this.statsService.getPcsProdTotalParLigne(this.semaineSelectionnee),
@@ -124,7 +171,8 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
         this.titre5M = `Analyse des 5M - ${this.semaineSelectionnee}`;
 
         this.isLoading = false;
-        this.showStats = true;
+        this.showResultatsSemaine = true;
+        this.showResultatsDate = false;
         
         setTimeout(() => {
           this.creerGraphiques();
@@ -148,14 +196,11 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingDate = true;
-    this.showStatsDate = false;
-    this.showStats = false; // Masquer les stats par semaine
     
     this.statsService.getStatsParDate(this.dateSelectionnee).subscribe({
       next: (response) => {
         this.statsDate = response;
         
-        // Extraire les lignes de production pour la date
         this.statsLignesDate = response.productionParLigne.map(ligne => ({
           ligne: ligne.ligne,
           pcsProdTotal: ligne.pcsProdTotal,
@@ -168,7 +213,8 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
         console.log('Stats par date:', response);
         
         this.isLoadingDate = false;
-        this.showStatsDate = true;
+        this.showResultatsDate = true;
+        this.showResultatsSemaine = false;
         this.showNonSaisieList = false;
         this.showSaisieDetails = false;
         
@@ -184,9 +230,13 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Détruire tous les graphiques
-   */
+  retourAuxFiltres(): void {
+    this.showResultatsSemaine = false;
+    this.showResultatsDate = false;
+    this.ligneSelectionnee = null;
+    this.showAffectation = false; // ✅ Réinitialiser l'affichage affectation
+  }
+
   private destroyAllCharts(): void {
     if (this.barChart) {
       this.barChart.destroy();
@@ -200,31 +250,20 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     this.pieCharts5M.clear();
   }
 
-  /**
-   * Créer les graphiques pour la semaine
-   */
   creerGraphiques(): void {
     this.destroyAllCharts();
     this.creerHistogramme();
     this.creerGraphiquesCirculaires5M();
   }
 
-  /**
-   * Créer les graphiques pour la date
-   */
   creerGraphiquesDate(): void {
-    // Détruire uniquement le graphique date si il existe
     if (this.barChartDate) {
       this.barChartDate.destroy();
       this.barChartDate = null;
     }
-    
     this.creerHistogrammeDate();
   }
 
-  /**
-   * Créer l'histogramme pour la semaine
-   */
   creerHistogramme(): void {
     const ctx = document.getElementById('barChart') as HTMLCanvasElement;
     if (!ctx) return;
@@ -280,9 +319,6 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Créer l'histogramme pour la date
-   */
   creerHistogrammeDate(): void {
     const ctx = document.getElementById('barChartDate') as HTMLCanvasElement;
     if (!ctx) return;
@@ -348,9 +384,6 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     return colors[color] || '#374151';
   }
 
-  /**
-   * Créer les graphiques circulaires des 5M
-   */
   creerGraphiquesCirculaires5M(): void {
     if (!this.stats5M) return;
 
@@ -408,9 +441,6 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Sélectionner une ligne (pour le mode semaine avec 5M)
-   */
   selectionnerLigne(ligne: string): void {
     this.ligneSelectionnee = ligne;
     
@@ -444,9 +474,6 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
     this.router.navigate(['/choix']);
   }
 
-  /**
-   * Méthodes pour les statistiques de saisie
-   */
   getLignesAvecSaisie(): any[] {
     if (!this.statsDate?.rapportsSaisie?.repartitionParLigne) {
       return [];

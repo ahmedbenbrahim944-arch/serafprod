@@ -205,6 +205,9 @@
               </div>
             </div>
           </div>
+ <p class="text-black"> C : commander / M : Modifier / DP : Déclaration production / DM : Déclaration Magasin / Δ : Delta /
+            NB OP : Nombre d'opérateurs
+          </p>
 
           <!-- Tableau de planification -->
           <div *ngIf="filteredWeekPlanification()" 
@@ -240,6 +243,14 @@
       <!-- CHANGER text-gray-300 EN text-black -->
       <div class="text-xs sm:text-sm text-black mt-1">{{ getDayDateCorrected(weekDays[i], i) | date:'dd/MM' }}</div>
     </div>
+     <button 
+            (click)="onPersonIconClick(day)"
+            class="ml-2 p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+            title="Saisie rapport production">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+          </button>
   </div>
 </th>
     </ng-container>
@@ -249,9 +260,9 @@
       <th class="text-center border-2 border-gray-700 day-header">
         <div class="flex flex-col items-center justify-center px-2 py-2">
           <!-- Badge NB OP -->
-          <div class="text-black font-bold text-base"
+          <div class="text-black  "
                >
-           <span class="text-xs sm:text-sm text-black font-bold mb-1">NB OP</span>
+           <span >NB OP</span>
           </div>
           
           <!-- Mode édition : Input -->
@@ -259,7 +270,7 @@
           
           <!-- Mode lecture : Affichage avec code couleur -->
           <div *ngIf="!isEditing()" 
-               class="text-black font-bold text-base"
+               class="text-black text-base"
               >
             {{ getAverageOperators(day) }}
           </div>
@@ -397,43 +408,46 @@
   </div>
 
   <!-- Formulaire de Saisie Rapport Production -->
-<div *ngIf="showProductionForm()" class="production-form-overlay fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-  <div class="production-form-container bg-slate-800 rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col">
+<!-- Formulaire de Saisie Rapport Production - MODIFIÉ -->
+<div *ngIf="showProductionForm()" class="production-form-overlay fixed inset-0 bg-gray-900/90 flex items-center justify-center z-50 p-4">
+  <div class="production-form-container bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col">
     
-    <div class="bg-cyan-600 p-4 flex justify-between items-center flex-shrink-0 sticky top-0 z-50">
-      <h2 class="text-2xl font-bold text-white">SAISIE RAPPORT PRODUCTION - MULTI-OPÉRATEURS</h2>
-      <button (click)="closeProductionForm()" class="text-white hover:text-cyan-200 transition-colors">
+    <!-- Header - MODIFIÉ -->
+    <div class="bg-blue-600 p-4 flex justify-between items-center flex-shrink-0 sticky top-0 z-50">
+      <h2 class="text-xl font-bold text-white">SAISIE RAPPORT PRODUCTION - MULTI-OPÉRATEURS</h2>
+      <button (click)="closeProductionForm()" class="text-white hover:text-blue-200 transition-colors">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
     </div>
 
-<div class="flex flex-1 min-h-0">
-        <!-- Section de sélection des opérateurs -->
-      <div class="w-1/4 bg-slate-900 p-6 overflow-y-auto border-r border-slate-600">
-        <h3 class="text-cyan-400 font-semibold text-lg mb-4">Sélection des Opérateurs</h3>
+    <div class="flex flex-1 min-h-0">
+      <!-- Section de sélection des opérateurs - MODIFIÉ -->
+      <div class="w-1/4 bg-gray-50 p-4 overflow-y-auto border-r border-gray-300">
+        <h3 class="text-blue-600 font-semibold text-lg mb-3">Sélection des Opérateurs</h3>
         
-        <div class="mb-4">
-  <label class="block text-cyan-400 font-semibold mb-2">DATE</label>
-  <input 
-    type="text" 
-    [value]="currentDate()"
-    class="w-full bg-slate-700 border border-cyan-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-300"
-    readonly>
-</div>
-
-        <!-- Affichage de la ligne sélectionnée -->
-        <div class="mb-4 p-3 bg-cyan-900/20 rounded-lg border border-cyan-700/30">
-          <h4 class="font-bold text-cyan-400 text-sm mb-1">LIGNE SÉLECTIONNÉE</h4>
-          <p class="text-black text-base">{{ selectedLigne()?.ligne }}</p>
+        <!-- Date - MODIFIÉ -->
+        <div class="mb-3">
+          <label class="block text-blue-600 font-semibold mb-2 text-sm">DATE</label>
+          <input 
+            type="text" 
+            [value]="currentDate()"
+            class="w-full bg-gray-100 border border-blue-400 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:border-blue-500"
+            readonly>
         </div>
 
-        <!-- Barre de recherche -->
-        <div class="mb-4">
-          <div class="search-container p-3 rounded-lg">
+        <!-- Ligne sélectionnée - MODIFIÉ -->
+        <div class="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <h4 class="font-bold text-blue-600 text-xs mb-1">LIGNE SÉLECTIONNÉE</h4>
+          <p class="text-gray-800 text-sm font-semibold">{{ selectedLigne()?.ligne }}</p>
+        </div>
+
+        <!-- Barre de recherche - MODIFIÉ -->
+        <div class="mb-3">
+          <div class="search-container p-2 rounded-lg bg-gray-100 border border-gray-300">
             <div class="flex items-center">
-              <svg class="w-5 h-5 search-icon mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
               <input 
@@ -441,255 +455,251 @@
                 [value]="searchRecordQuery()"
                 (input)="onSearchRecordChange($event)"
                 placeholder="Rechercher matricule..." 
-                class="search-input flex-1">
+                class="search-input flex-1 bg-transparent text-gray-800 text-sm focus:outline-none">
             </div>
           </div>
         </div>
 
-        <!-- Boutons de sélection globale -->
-        <div class="flex space-x-2 mb-4">
+        <!-- Boutons de sélection globale - MODIFIÉ -->
+        <div class="flex space-x-2 mb-3">
           <button 
             (click)="selectAllOperators()"
-            class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-semibold transition-colors">
+            class="flex-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-semibold transition-colors">
             Tout
           </button>
           <button 
             (click)="deselectAllOperators()"
-            class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-semibold transition-colors">
+            class="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-semibold transition-colors">
             Aucun
           </button>
         </div>
 
-        <!-- Liste des opérateurs avec cases à cocher -->
-        <div class="space-y-2 max-h-96 overflow-y-auto operator-list">
+        <!-- Liste des opérateurs - MODIFIÉ -->
+        <div class="space-y-1 max-h-64 overflow-y-auto operator-list">
           <div *ngFor="let operator of filteredOperatorsForSelection()" 
-               class="p-3 rounded-lg transition-colors cursor-pointer"
-               [class.bg-cyan-600]="selectedMatricules().includes(operator.matricule)"
-               [class.bg-slate-800]="!selectedMatricules().includes(operator.matricule)"
+               class="p-2 rounded transition-colors cursor-pointer hover:bg-blue-100"
+               [class.bg-blue-100]="selectedMatricules().includes(operator.matricule)"
                (click)="toggleMatriculeSelection(operator.matricule)">
             <div class="flex items-center">
-              <div class="mr-3">
+              <div class="mr-2">
                 <input 
                   type="checkbox" 
                   [checked]="selectedMatricules().includes(operator.matricule)"
                   (change)="toggleMatriculeSelection(operator.matricule)"
-                  class="w-4 h-4 text-cyan-600 bg-slate-700 border-slate-600 rounded focus:ring-cyan-500 focus:ring-2">
+                  class="w-3 h-3 text-blue-600 bg-white border-gray-400 rounded focus:ring-blue-500">
               </div>
               <div class="flex-1">
-                <div class="font-semibold text-white text-sm">{{ operator.matricule }}</div>
-                <div class="text-xs text-gray-300">{{ operator.nom }} {{ operator.prenom }}</div>
+                <div class="font-semibold text-gray-800 text-xs">{{ operator.matricule }}</div>
+                <div class="text-xs text-gray-600">{{ operator.nom }} {{ operator.prenom }}</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Résumé de sélection -->
-        <div class="mt-4 p-3 bg-slate-800 rounded-lg">
+        <!-- Résumé de sélection - MODIFIÉ -->
+        <div class="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
           <div class="text-center">
-            <span class="text-cyan-400 font-semibold">Opérateurs sélectionnés:</span>
-            <div class="text-white font-bold text-lg mt-1">{{ selectedMatricules().length }}</div>
+            <span class="text-blue-600 font-semibold text-xs">Opérateurs sélectionnés:</span>
+            <div class="text-gray-800 font-bold text-base mt-1">{{ selectedMatricules().length }}</div>
           </div>
         </div>
 
-        <!-- Bouton pour voir les enregistrements -->
+        <!-- Bouton voir enregistrements - MODIFIÉ -->
         <button 
           (click)="toggleRecordsPanel()"
-          class="w-full mt-4 px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold transition-colors flex items-center justify-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          class="w-full mt-3 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-semibold transition-colors flex items-center justify-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           Voir Enregistrements
         </button>
       </div>
 
-      <!-- Section de saisie principale -->
-      <!-- Section de saisie principale -->
-<div class="flex-1 p-6 overflow-y-auto">
-  <div *ngIf="selectedMatricules().length === 0" class="h-full flex items-center justify-center">
-    <div class="text-center text-gray-500">
-      <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-      </svg>
-      <p class="text-lg">Sélectionnez des opérateurs pour commencer la saisie</p>
-      <p class="text-sm text-gray-400 mt-2">Utilisez les cases à cocher à gauche</p>
-    </div>
-  </div>
+      <!-- Contenu principal - MODIFIÉ -->
+      <div class="flex-1 p-4 overflow-y-auto bg-white">
+        <div *ngIf="selectedMatricules().length === 0" class="h-full flex items-center justify-center">
+          <div class="text-center text-gray-500">
+            <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+            </svg>
+            <p class="text-base font-medium">Sélectionnez des opérateurs pour commencer la saisie</p>
+            <p class="text-sm text-gray-400 mt-1">Utilisez les cases à cocher à gauche</p>
+          </div>
+        </div>
 
-  <!-- Tableau de saisie compact -->
-  <div *ngIf="selectedMatricules().length > 0" class="space-y-4">
-    
-    <!-- Table responsive avec header fixe -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-900 sticky top-0 z-10">
-          <tr>
-            <th class="px-3 py-3 text-left text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">Nom & prénom</th>
-            <th class="px-3 py-3 text-center text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">phase 1</th>
-            <th class="px-3 py-3 text-center text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">phase 2</th>
-            <th class="px-3 py-3 text-center text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">phase 3</th>
-            <th class="px-3 py-3 text-center text-cyan-400 font-semibold border-b-2 border-cyan-600 bg-slate-900">Heure</th>
-          </tr>
-        </thead>
-      <tbody>
-        <tr *ngFor="let matricule of selectedMatricules()" 
-            class="border-b border-slate-700 hover:bg-slate-800/50 transition-colors">
-          
-          <!-- Nom & Prénom -->
-          <td class="px-3 py-3">
-            <div class="font-semibold text-white">{{ getSafeOperatorFormData(matricule).nomPrenom }}</div>
-            <div class="text-xs text-gray-400">{{ matricule }}</div>
-          </td>
-          
-          <!-- Phase 1 avec heures -->
-          <td class="px-2 py-3">
-            <div class="space-y-2">
-              <select 
-  [value]="getOperatorPhaseValue(matricule, 0)"
-  (change)="updateOperatorPhase(matricule, 0, $any($event.target).value)"
-  class="w-full bg-slate-700 border border-cyan-500/40 rounded px-2 py-1.5 text-white text-sm focus:outline-none focus:border-cyan-300">
-  <option value="">sélectionner phase</option>
-  <option *ngFor="let phase of availablePhases()" [value]="phase">
-    {{ phase }}
-  </option>
-</select>
-              <div class="flex items-center space-x-2">
-                <span class="text-xs text-gray-400 whitespace-nowrap">Heures:</span>
-                <input 
-                  type="number" 
-                  [value]="getOperatorPhaseHeures(matricule, 0)"
-                  (input)="updateOperatorPhaseHeures(matricule, 0, $any($event.target).value)"
-                  min="0"
-                  max="8"
-                  step="0.5"
-                  placeholder="0"
-                  class="w-16 bg-slate-700 border border-cyan-500/40 rounded px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-cyan-300">
-              </div>
-            </div>
-          </td>
-          
-          <!-- Phase 2 avec heures -->
-          <td class="px-2 py-3">
-            <div class="space-y-2">
-              <select 
-                [value]="getOperatorPhaseValue(matricule, 1)"
-                (change)="updateOperatorPhase(matricule, 1, $any($event.target).value)"
-                class="w-full bg-slate-700 border border-cyan-500/40 rounded px-2 py-1.5 text-white text-sm focus:outline-none focus:border-cyan-300">
-                <option value="">sélectionner phase</option>
-                <option *ngFor="let phase of availablePhases()" [value]="phase">
-                  {{ phase }}
-                </option>
-              </select>
-              <div class="flex items-center space-x-2">
-                <span class="text-xs text-gray-400 whitespace-nowrap">Heures:</span>
-                <input 
-                  type="number" 
-                  [value]="getOperatorPhaseHeures(matricule, 1)"
-                  (input)="updateOperatorPhaseHeures(matricule, 1, $any($event.target).value)"
-                  min="0"
-                  max="8"
-                  step="0.5"
-                  placeholder="0"
-                  class="w-16 bg-slate-700 border border-cyan-500/40 rounded px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-cyan-300">
-              </div>
-            </div>
-          </td>
-          
-          <!-- Phase 3 avec heures -->
-          <td class="px-2 py-3">
-            <div class="space-y-2">
-              <select 
-                [value]="getOperatorPhaseValue(matricule, 2)"
-                (change)="updateOperatorPhase(matricule, 2, $any($event.target).value)"
-                class="w-full bg-slate-700 border border-cyan-500/40 rounded px-2 py-1.5 text-white text-sm focus:outline-none focus:border-cyan-300">
-                <option value="">sélectionner phase</option>
-                <option *ngFor="let phase of availablePhases()" [value]="phase">
-                  {{ phase }}
-                </option>
-              </select>
-              <div class="flex items-center space-x-2">
-                <span class="text-xs text-gray-400 whitespace-nowrap">Heures:</span>
-                <input 
-                  type="number" 
-                  [value]="getOperatorPhaseHeures(matricule, 2)"
-                  (input)="updateOperatorPhaseHeures(matricule, 2, $any($event.target).value)"
-                  min="0"
-                  max="8"
-                  step="0.5"
-                  placeholder="0"
-                  class="w-16 bg-slate-700 border border-cyan-500/40 rounded px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-cyan-300">
-              </div>
-            </div>
-          </td>
-          
-          <!-- Total Heures (calculé automatiquement) -->
-          <td class="px-2 py-3">
-            <div class="text-center">
-              <div class="text-green-400 font-bold text-lg">
-                {{ getSafeOperatorFormData(matricule).totalHeures }}h
-              </div>
-              <div class="text-xs text-gray-400 mt-1">
-                {{ 8 - getSafeOperatorFormData(matricule).totalHeures }}h restantes
-              </div>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+        <!-- Tableau de saisie - MODIFIÉ -->
+        <div *ngIf="selectedMatricules().length > 0" class="space-y-3">
+          <div class="overflow-x-auto border border-gray-200 rounded-lg">
+            <table class="w-full text-sm">
+               <thead class="bg-white sticky top-0 z-10 border-b border-gray-300">
+                <tr>
+                  <th class="px-3 py-2 text-left text-blue-600 font-semibold ">Opérateur</th>
+                  <th class="px-2 py-2 text-center text-blue-600 font-semibold">Phase 1</th>
+                  <th class="px-2 py-2 text-center text-blue-600 font-semibold ">Phase 2</th>
+                  <th class="px-2 py-2 text-center text-blue-600 font-semibold ">Phase 3</th>
+                  <th class="px-2 py-2 text-center text-blue-600 font-semibold ">Heures</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let matricule of selectedMatricules()" 
+                    class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                  
+                  <!-- Opérateur -->
+                  <td class="px-3 py-2">
+                    <div class="font-semibold text-gray-800 text-sm">{{ getSafeOperatorFormData(matricule).nomPrenom }}</div>
+                    <div class="text-xs text-gray-500">{{ matricule }}</div>
+                  </td>
+                  
+                  <!-- Phase 1 -->
+                  <td class="px-2 py-2">
+                    <div class="space-y-1">
+                      <select 
+                        [value]="getOperatorPhaseValue(matricule, 0)"
+                        (change)="updateOperatorPhase(matricule, 0, $any($event.target).value)"
+                        class="w-full bg-white border border-blue-300 rounded px-2 py-1 text-gray-800 text-xs focus:outline-none focus:border-blue-500">
+                        <option value="">Phase 1</option>
+                        <option *ngFor="let phase of availablePhases()" [value]="phase">
+                          {{ phase }}
+                        </option>
+                      </select>
+                      <div class="flex items-center space-x-1">
+                        <span class="text-xs text-gray-600 whitespace-nowrap">Heures:</span>
+                        <input 
+                          type="number" 
+                          [value]="getOperatorPhaseHeures(matricule, 0)"
+                          (input)="updateOperatorPhaseHeures(matricule, 0, $any($event.target).value)"
+                          min="0"
+                          max="8"
+                          step="0.5"
+                          placeholder="0"
+                          class="w-14 bg-white border border-blue-300 rounded px-1 py-0.5 text-gray-800 text-xs text-center focus:outline-none focus:border-blue-500">
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <!-- Phase 2 -->
+                  <td class="px-2 py-2">
+                    <div class="space-y-1">
+                      <select 
+                        [value]="getOperatorPhaseValue(matricule, 1)"
+                        (change)="updateOperatorPhase(matricule, 1, $any($event.target).value)"
+                        class="w-full bg-white border border-blue-300 rounded px-2 py-1 text-gray-800 text-xs focus:outline-none focus:border-blue-500">
+                        <option value="">Phase 2</option>
+                        <option *ngFor="let phase of availablePhases()" [value]="phase">
+                          {{ phase }}
+                        </option>
+                      </select>
+                      <div class="flex items-center space-x-1">
+                        <span class="text-xs text-gray-600 whitespace-nowrap">Heures:</span>
+                        <input 
+                          type="number" 
+                          [value]="getOperatorPhaseHeures(matricule, 1)"
+                          (input)="updateOperatorPhaseHeures(matricule, 1, $any($event.target).value)"
+                          min="0"
+                          max="8"
+                          step="0.5"
+                          placeholder="0"
+                          class="w-14 bg-white border border-blue-300 rounded px-1 py-0.5 text-gray-800 text-xs text-center focus:outline-none focus:border-blue-500">
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <!-- Phase 3 -->
+                  <td class="px-2 py-2">
+                    <div class="space-y-1">
+                      <select 
+                        [value]="getOperatorPhaseValue(matricule, 2)"
+                        (change)="updateOperatorPhase(matricule, 2, $any($event.target).value)"
+                        class="w-full bg-white border border-blue-300 rounded px-2 py-1 text-gray-800 text-xs focus:outline-none focus:border-blue-500">
+                        <option value="">Phase 3</option>
+                        <option *ngFor="let phase of availablePhases()" [value]="phase">
+                          {{ phase }}
+                        </option>
+                      </select>
+                      <div class="flex items-center space-x-1">
+                        <span class="text-xs text-gray-600 whitespace-nowrap">Heures:</span>
+                        <input 
+                          type="number" 
+                          [value]="getOperatorPhaseHeures(matricule, 2)"
+                          (input)="updateOperatorPhaseHeures(matricule, 2, $any($event.target).value)"
+                          min="0"
+                          max="8"
+                          step="0.5"
+                          placeholder="0"
+                          class="w-14 bg-white border border-blue-300 rounded px-1 py-0.5 text-gray-800 text-xs text-center focus:outline-none focus:border-blue-500">
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <!-- Total Heures -->
+                  <td class="px-2 py-2">
+                    <div class="text-center">
+                      <div class="text-green-600 font-bold text-base">
+                        {{ getSafeOperatorFormData(matricule).totalHeures }}h
+                      </div>
+                      <div class="text-xs text-gray-500 mt-0.5">
+                        {{ 8 - getSafeOperatorFormData(matricule).totalHeures }}h restantes
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-  <!-- Boutons d'action -->
-  <div class="flex justify-between pt-4 border-t border-slate-600">
-    <button 
-      (click)="closeProductionForm()"
-      class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg font-semibold transition-colors">
-      Annuler
-    </button>
-    <button 
-      (click)="saveAllProductionRecords()"
-      class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold transition-colors">
-      Sauvegarder ({{ selectedMatricules().length }})
-    </button>
-  </div>
-</div>
+          <!-- Boutons d'action - MODIFIÉ -->
+          <div class="flex justify-between pt-3 border-t border-gray-300">
+            <button 
+              (click)="closeProductionForm()"
+              class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded font-semibold text-sm transition-colors">
+              Annuler
+            </button>
+            <button 
+              (click)="saveAllProductionRecords()"
+              class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded font-semibold text-sm transition-colors">
+              Sauvegarder ({{ selectedMatricules().length }})
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Panneau des enregistrements (côté droit) -->
-      <div *ngIf="showRecordsPanel()" class="w-1/3 bg-slate-900 p-6 overflow-y-auto border-l border-slate-600">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-cyan-400 font-semibold text-lg">Enregistrements du {{ currentDate() }}</h3>
+      <!-- Panneau des enregistrements - MODIFIÉ -->
+      <div *ngIf="showRecordsPanel()" class="w-1/3 bg-gray-50 p-4 overflow-y-auto border-l border-gray-300">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-blue-600 font-semibold text-base">Enregistrements du {{ currentDate() }}</h3>
           <button 
             (click)="toggleRecordsPanel()"
-            class="text-gray-400 hover:text-white transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="text-gray-500 hover:text-gray-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
         </div>
 
-        <div class="space-y-3">
+        <div class="space-y-2">
           <div *ngFor="let record of filteredProductionRecords()" 
                (click)="showRecordDetails(record)"
-               class="bg-slate-800 p-3 rounded-lg border border-slate-600 hover:border-cyan-500 transition-colors cursor-pointer">
-            <div class="flex justify-between items-start mb-2">
+               class="bg-white p-2 rounded border border-gray-300 hover:border-blue-400 transition-colors cursor-pointer">
+            <div class="flex justify-between items-start mb-1">
               <div>
-                <span class="text-cyan-400 font-semibold text-sm">{{ record.matricule }}</span>
-                <span class="text-white ml-2 text-sm">- {{ record.nomPrenom }}</span>
+                <span class="text-blue-600 font-semibold text-xs">{{ record.matricule }}</span>
+                <span class="text-gray-800 ml-1 text-xs">- {{ record.nomPrenom }}</span>
               </div>
-              <span class="text-green-400 font-semibold text-sm">{{ record.totalHeures }}h</span>
+              <span class="text-green-600 font-semibold text-xs">{{ record.totalHeures }}h</span>
             </div>
             
-            <div class="text-xs text-gray-300">
+            <div class="text-xs text-gray-600">
               <div>Ligne: {{ record.ligne1 }}</div>
-              <div class="mt-1">
-                <span class="text-cyan-300">Phases:</span>
-                <span class="ml-2">{{ formatPhases(record.phasesLigne1) }}</span>
+              <div class="mt-0.5">
+                <span class="text-blue-500">Phases:</span>
+                <span class="ml-1">{{ formatPhases(record.phasesLigne1) }}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div *ngIf="filteredProductionRecords().length === 0" class="text-center text-gray-500 py-8">
-          <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div *ngIf="filteredProductionRecords().length === 0" class="text-center text-gray-400 py-6">
+          <svg class="w-10 h-10 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           <p class="text-sm">Aucun enregistrement pour cette date</p>

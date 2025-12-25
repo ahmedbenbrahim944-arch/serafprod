@@ -131,7 +131,13 @@
           Rapport Phase
         </button>
 
-        
+        <button 
+  (click)="setActiveTab('stats-5m-annuelles')"
+  class="nav-button"
+  [class.active]="activeTab() === 'stats-5m-annuelles'">
+  <img src="assets/icons/stat.png" alt="View" class="nav-button-icon">
+  Non Productivité Annuelle
+</button>
 
          <button 
           (click)="setActiveTab('stats-annuelles')"
@@ -655,7 +661,7 @@
             class="flex-1 submit-btn py-4 rounded-xl font-semibold transition-all duration-300 bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="flex items-center justify-center">
               <span *ngIf="loading()" class="loader-small mr-2"></span>
-              {{ loading() ? 'Génération en cours...' : '📊 Télécharger Excel Annuel' }}
+              {{ loading() ? 'Génération en cours...' : ' Télécharger Excel Annuel' }}
               <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
               </svg>
@@ -663,6 +669,132 @@
           </button>
         </div>
          </form>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="activeTab() === 'stats-5m-annuelles'" class="fade-in">
+  <div class="max-w-2xl mx-auto">
+    <div class="creation-card">
+      <h2 class="text-2xl font-bold text-red-400 mb-6">Télécharger la Non Productivité Annuelle (5M)</h2>
+      <p class="text-gray-400 mb-6">Générez un rapport Excel contenant les statistiques 5M (Non-Productivité) mensuelles pour une année complète</p>
+      
+      <!-- Message d'erreur -->
+      <div *ngIf="errorMessage()" class="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-xl animate-shake">
+        <div class="flex items-start">
+          <svg class="w-6 h-6 text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div>
+            <p class="text-red-300 font-medium">{{ errorMessage() }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <form (ngSubmit)="onDownloadStats5MAnnuelles()" class="space-y-6">
+        <!-- Sélection de la date -->
+        <div>
+          <label class="form-label">Sélectionner une Date *</label>
+          <input 
+            type="date" 
+            [(ngModel)]="stats5MAnnuellesForm.date" 
+            name="date5m"
+            class="form-input"
+            [class.error]="stats5MAnnuellesForm.errors.date"
+            placeholder="YYYY-MM-DD">
+          
+          <div *ngIf="stats5MAnnuellesForm.errors.date" class="form-error">
+            {{ stats5MAnnuellesForm.errors.date }}
+          </div>
+          
+          <!-- Aperçu de l'année -->
+          <div *ngIf="stats5MAnnuellesForm.date" class="mt-3 p-3 bg-gray-700/30 rounded-xl border border-red-500/30">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <div>
+                <span class="text-sm text-gray-400">Année sélectionnée :</span>
+                <div class="font-semibold text-red-400">{{ getYearFromDate(stats5MAnnuellesForm.date) }}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="text-sm text-gray-400 mt-1">
+            Sélectionnez n'importe quelle date de l'année à analyser
+          </div>
+        </div>
+
+        <!-- Aperçu des statistiques (si disponibles) -->
+        <div *ngIf="stats5MAnnuellesPreview()" class="mt-6 p-4 bg-gray-800/50 rounded-xl border border-red-500/30">
+          <h3 class="text-lg font-semibold text-red-400 mb-3">Aperçu des données 5M</h3>
+          
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="stat-item">
+              <div class="text-red-300 font-bold text-xl">{{ stats5MAnnuellesPreview()!.moyennesAnnuelles.total5M || 0 }}</div>
+              <div class="text-gray-300 text-sm">Total 5M Annuel</div>
+            </div>
+            <div class="stat-item">
+              <div class="text-orange-300 font-bold text-xl">{{ stats5MAnnuellesPreview()!.moyennesAnnuelles.pourcentageTotal5M.toFixed(2) }}%</div>
+              <div class="text-gray-300 text-sm">% Moyen 5M</div>
+            </div>
+          </div>
+
+          <!-- Répartition des causes -->
+          <div class="mt-4">
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Répartition des causes (% dans 5M) :</h4>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="flex justify-between p-2 bg-gray-700/30 rounded">
+                <span class="text-gray-400">Matière première:</span>
+                <span class="text-blue-300 font-semibold">{{ stats5MAnnuellesPreview()!.moyennesAnnuelles.matierePremiere.pourcentageDans5M.toFixed(2) }}%</span>
+              </div>
+              <div class="flex justify-between p-2 bg-gray-700/30 rounded">
+                <span class="text-gray-400">Qualité:</span>
+                <span class="text-green-300 font-semibold">{{ stats5MAnnuellesPreview()!.moyennesAnnuelles.qualite.pourcentageDans5M.toFixed(2) }}%</span>
+              </div>
+              <div class="flex justify-between p-2 bg-gray-700/30 rounded">
+                <span class="text-gray-400">Absence:</span>
+                <span class="text-yellow-300 font-semibold">{{ stats5MAnnuellesPreview()!.moyennesAnnuelles.absence.pourcentageDans5M.toFixed(2) }}%</span>
+              </div>
+              <div class="flex justify-between p-2 bg-gray-700/30 rounded">
+                <span class="text-gray-400">Maintenance:</span>
+                <span class="text-purple-300 font-semibold">{{ stats5MAnnuellesPreview()!.moyennesAnnuelles.maintenance.pourcentageDans5M.toFixed(2) }}%</span>
+              </div>
+              <div class="flex justify-between p-2 bg-gray-700/30 rounded">
+                <span class="text-gray-400">Rendement:</span>
+                <span class="text-pink-300 font-semibold">{{ stats5MAnnuellesPreview()!.moyennesAnnuelles.rendement.pourcentageDans5M.toFixed(2) }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-xs text-gray-400 mt-3">
+             Données trouvées pour l'année {{ stats5MAnnuellesPreview()!.annee }}
+          </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="flex gap-4">
+          <button 
+            type="button" 
+            (click)="onCancelStats5MAnnuelles()"
+            class="flex-1 py-4 rounded-xl font-semibold transition-all duration-300 bg-gray-600 hover:bg-gray-500 text-white">
+            Annuler
+          </button>
+          
+          <button 
+            type="submit" 
+            [disabled]="loading() || !stats5MAnnuellesForm.date.trim()"
+            class="flex-1 submit-btn py-4 rounded-xl font-semibold transition-all duration-300 bg-red-600 hover:bg-red-500 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="flex items-center justify-center">
+              <span *ngIf="loading()" class="loader-small mr-2"></span>
+              {{ loading() ? 'Génération en cours...' : 'Télécharger Excel 5M' }}
+              <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
