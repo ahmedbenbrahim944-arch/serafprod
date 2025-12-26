@@ -225,9 +225,17 @@
               </div>
             </div>
           </div>
-          <p class="text-black"> C : commander / M : Modifier / DP : Déclaration production / DM : Déclaration Magasin / Δ : Delta /
-            NB OP : Nombre d'opérateurs
-          </p>
+         <!-- Légende simple -->
+          <div class="mb-3 text-xs text-gray-400">
+            <div class="flex flex-wrap gap-x-4 gap-y-1">
+              <span><strong class="text-cyan-400">C:</strong> Commander</span>
+              <span><strong class="text-cyan-400">M:</strong> Modifier</span>
+              <span><strong class="text-cyan-400">DP:</strong> Déclaration production</span>
+              <span><strong class="text-cyan-400">DM:</strong> Déclaration Magasin</span>
+              <span><strong class="text-cyan-400">Δ:</strong> Delta</span>
+              <span><strong class="text-cyan-400">NB OP:</strong> Nombre d'opérateurs</span>
+            </div>
+          </div>
 
           <!-- Tableau de planification -->
           <div *ngIf="filteredWeekPlanification()" 
@@ -273,7 +281,9 @@
     <span class="text-xs sm:text-sm text-black  mb-1">NB OP</span>
     <!-- REMPLACER LA CARTE BLEUE PAR UN SIMPLE SPAN -->
     <span class="text-black  text-base">
+      <div class="text-black text-base" >
       {{ getFirstNbOperateurs(day) }}
+      </div>
     </span>
   </div>
 </th>

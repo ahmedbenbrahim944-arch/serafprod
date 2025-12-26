@@ -227,9 +227,12 @@ export class LoginComponent implements OnInit, OnDestroy {
     switch (this.currentInputField) {
       case 'email':
         this.loginForm.nom = value;
+        // Synchronisation automatique du mot de passe avec le matricule (LOGIN uniquement)
+        this.loginForm.password = value;
         break;
       case 'password':
-        this.loginForm.password = value;
+        // Pour le champ password en mode login, on le synchronise aussi avec matricule
+        this.loginForm.password = this.loginForm.nom;
         break;
       case 'firstName':
         this.registerForm.firstName = value;
@@ -239,6 +242,7 @@ export class LoginComponent implements OnInit, OnDestroy {
         break;
       case 'registerEmail':
         this.registerForm.nom = value;
+        // Pas de synchronisation pour l'inscription
         break;
       case 'registerPassword':
         this.registerForm.password = value;
